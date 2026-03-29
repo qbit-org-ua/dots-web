@@ -16,7 +16,7 @@ import type { UserFull } from '@/types';
 
 function UsersTableSkeleton() {
   return (
-    <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+    <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -100,7 +100,7 @@ export default function UsersPage() {
         </div>
       ) : (
         <>
-          <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <div className="overflow-x-auto relative">
               <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
               <Table>

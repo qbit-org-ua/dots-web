@@ -14,7 +14,7 @@ import type { StandingsData } from '@/types';
 
 function StandingsTableSkeleton() {
   return (
-    <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+    <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
       <div className="p-1">
         <div className="flex items-center gap-3 px-3 py-2 border-b border-border bg-muted">
           <Skeleton className="h-4 w-8" />
@@ -77,7 +77,7 @@ export default function ContestStandingsPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
           <div className="overflow-x-auto relative">
             <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
             {contestType === 'acm' ? (

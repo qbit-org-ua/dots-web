@@ -85,7 +85,7 @@ export default function AdminGroupsPage() {
       {isLoading ? (
         <Spinner />
       ) : (
-        <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
