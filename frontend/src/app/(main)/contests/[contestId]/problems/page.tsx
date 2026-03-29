@@ -88,7 +88,7 @@ export default function ContestProblemsPage() {
                   <TableRow key={p.problem_id}>
                     <TableCell className="font-mono font-bold text-muted-foreground">{p.short_name}</TableCell>
                     <TableCell>
-                      <Link href={`/problems/${p.problem_id}?contest_id=${contestId}`} className="text-primary hover:underline font-medium">
+                      <Link href={`/contests/${contestId}/problems/${p.problem_id}`} className="text-primary hover:underline font-medium">
                         {p.title}
                       </Link>
                     </TableCell>

@@ -115,7 +115,7 @@ export default function ContestSolutionsPage() {
                     </TableCell>
                     <TableCell>
                       <Link
-                        href={`/problems/${s.problem_id}`}
+                        href={`/contests/${contestId}/problems/${s.problem_id}`}
                         className="text-primary hover:underline font-medium"
                         onClick={(e) => e.stopPropagation()}
                       >

@@ -152,7 +152,7 @@ export default function ContestSolutionDetailPage() {
             <div className="flex justify-between border-b border-border pb-2">
               <dt className="text-muted-foreground">{t('solutions.tableProblem')}</dt>
               <dd>
-                <Link href={`/contests/${contestId}/problems`} className="text-primary hover:underline font-medium">
+                <Link href={`/contests/${contestId}/problems/${solution.problem_id}`} className="text-primary hover:underline font-medium">
                   {shortName ? `${shortName}: ` : ''}{problemTitle || `#${solution.problem_id}`}
                 </Link>
               </dd>
