@@ -786,11 +786,13 @@ pub async fn submit_solution(
 
     let solution_id = result.last_insert_id() as u32;
 
-    // Save source file to var/sorted/{uid:04}/{pid:04}/{filename} (matching PHP layout)
+    // Save source file to <UPLOAD_DIR>/sorted/<userId>/<problemId>/<filename>
     let filename = crate::services::file_storage::solution_filename(
         solution_id, problem_id, user.user_id, lang_id as i32, "F",
     );
-    let sorted_dir = format!("{}/var/sorted/{:04}/{:04}", state.config.upload_dir, user.user_id, problem_id);
+    let sorted_dir = crate::services::file_storage::solution_dir(
+        &state.config.upload_dir, user.user_id, problem_id,
+    );
     tokio::fs::create_dir_all(&sorted_dir).await.map_err(|e| AppError::Internal(e.into()))?;
     let source_path = format!("{}/{}", sorted_dir, filename);
     tokio::fs::write(&source_path, &source_data).await.map_err(|e| AppError::Internal(e.into()))?;
