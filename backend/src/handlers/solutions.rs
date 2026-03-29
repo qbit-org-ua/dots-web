@@ -85,6 +85,67 @@ pub async fn list_solutions(
     }
     let solutions = lq.bind(per_page).bind(offset).fetch_all(&state.pool).await?;
 
+    // Enrich with names for admin view
+    if is_admin && !solutions.is_empty() {
+        let user_ids: Vec<u32> = solutions.iter().map(|s| s.user_id).collect();
+        let problem_ids: Vec<u32> = solutions.iter().map(|s| s.problem_id).collect();
+        let contest_ids: Vec<i32> = solutions.iter().filter_map(|s| s.contest_id).collect();
+
+        let mut user_info: std::collections::HashMap<u32, (String, String)> = std::collections::HashMap::new();
+        if !user_ids.is_empty() {
+            let ph = user_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let sql = format!("SELECT user_id, nickname, FIO FROM labs_users WHERE user_id IN ({})", ph);
+            let mut q = sqlx::query_as::<_, (u32, String, String)>(&sql);
+            for id in &user_ids { q = q.bind(id); }
+            for (uid, nick, fio) in q.fetch_all(&state.pool).await? {
+                user_info.insert(uid, (nick, fio));
+            }
+        }
+
+        let mut problem_info: std::collections::HashMap<u32, String> = std::collections::HashMap::new();
+        if !problem_ids.is_empty() {
+            let ph = problem_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let sql = format!("SELECT problem_id, title FROM labs_problems WHERE problem_id IN ({})", ph);
+            let mut q = sqlx::query_as::<_, (u32, String)>(&sql);
+            for id in &problem_ids { q = q.bind(id); }
+            for (pid, title) in q.fetch_all(&state.pool).await? {
+                problem_info.insert(pid, title);
+            }
+        }
+
+        let mut contest_info: std::collections::HashMap<i32, String> = std::collections::HashMap::new();
+        if !contest_ids.is_empty() {
+            let ph = contest_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let sql = format!("SELECT contest_id, title FROM labs_contests WHERE contest_id IN ({})", ph);
+            let mut q = sqlx::query_as::<_, (i32, String)>(&sql);
+            for id in &contest_ids { q = q.bind(id); }
+            for (cid, title) in q.fetch_all(&state.pool).await? {
+                contest_info.insert(cid, title);
+            }
+        }
+
+        let enriched: Vec<serde_json::Value> = solutions.iter().map(|s| {
+            let mut val = serde_json::to_value(s).unwrap_or_default();
+            if let Some(obj) = val.as_object_mut() {
+                let (nick, fio) = user_info.get(&s.user_id).cloned().unwrap_or_default();
+                obj.insert("nickname".to_string(), serde_json::json!(nick));
+                obj.insert("fio".to_string(), serde_json::json!(fio));
+                obj.insert("problem_title".to_string(), serde_json::json!(problem_info.get(&s.problem_id).cloned().unwrap_or_default()));
+                if let Some(cid) = s.contest_id {
+                    obj.insert("contest_title".to_string(), serde_json::json!(contest_info.get(&cid).cloned().unwrap_or_default()));
+                }
+            }
+            val
+        }).collect();
+
+        return Ok(Json(json!({
+            "solutions": enriched,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+        })));
+    }
+
     Ok(Json(json!({
         "solutions": solutions,
         "total": total,

@@ -5,13 +5,26 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useTranslation } from '@/lib/i18n';
-import { formatDateTime } from '@/lib/utils';
+import { cn, formatDateTime } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
 import { Pagination } from '@/components/ui/pagination';
 import { VerdictBadge } from '@/components/verdict-badge';
 import { FormInput } from '@/components/ui/form-field';
-import type { Solution } from '@/types';
+
+interface AdminSolution {
+  solution_id: number;
+  problem_id: number;
+  user_id: number;
+  contest_id: number | null;
+  test_result: number;
+  test_score: string;
+  posted_time: number;
+  nickname?: string;
+  fio?: string;
+  problem_title?: string;
+  contest_title?: string;
+}
 
 export default function AdminSolutionsPage() {
   const [page, setPage] = useState(1);
@@ -33,7 +46,7 @@ export default function AdminSolutionsPage() {
     },
   });
 
-  const solutions: Solution[] = data?.solutions ?? [];
+  const solutions: AdminSolution[] = data?.solutions ?? [];
   const total = data?.total ?? 0;
   const perPage = data?.per_page ?? 25;
   const totalPages = Math.ceil(total / perPage);
@@ -87,40 +100,46 @@ export default function AdminSolutionsPage() {
                   <TableHead>{t('admin.tableUser')}</TableHead>
                   <TableHead>{t('solutions.tableProblem')}</TableHead>
                   <TableHead>{t('admin.tableContest')}</TableHead>
-                  <TableHead>{t('solutions.tableResult')}</TableHead>
                   <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
+                  <TableHead>{t('solutions.tableResult')}</TableHead>
                   <TableHead>{t('solutions.tableTime')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {solutions.map((s) => (
-                  <TableRow key={s.solution_id}>
+                  <TableRow key={s.solution_id} className={cn(s.test_result === 0 && 'bg-green-500/5')}>
                     <TableCell>
-                      <Link href={`/solutions/${s.solution_id}`} className="text-primary hover:underline">
+                      <Link href={`/solutions/${s.solution_id}`} className="text-primary hover:underline font-mono text-xs">
                         {s.solution_id}
                       </Link>
                     </TableCell>
                     <TableCell>
                       <Link href={`/users/${s.user_id}`} className="text-primary hover:underline">
-                        {s.user_id}
+                        <span className="text-muted-foreground text-xs">#{s.user_id}</span>{' '}
+                        <span className="font-medium">{s.nickname || '?'}</span>
+                        {s.fio && <span className="text-muted-foreground text-xs"> — {s.fio}</span>}
                       </Link>
                     </TableCell>
                     <TableCell>
                       <Link href={`/problems/${s.problem_id}`} className="text-primary hover:underline">
-                        {s.problem_id}
+                        <span className="text-muted-foreground text-xs">#{s.problem_id}</span>{' '}
+                        <span className="font-medium">{s.problem_title || '?'}</span>
                       </Link>
                     </TableCell>
                     <TableCell>
                       {s.contest_id ? (
                         <Link href={`/contests/${s.contest_id}`} className="text-primary hover:underline">
-                          {s.contest_id}
+                          <span className="text-muted-foreground text-xs">#{s.contest_id}</span>{' '}
+                          <span className="font-medium">{s.contest_title || '?'}</span>
                         </Link>
-                      ) : '-'}
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
+                    <TableCell className="text-right font-mono">{s.test_score}</TableCell>
                     <TableCell>
-                      <VerdictBadge result={s.test_result} />
+                      <VerdictBadge result={s.test_result} full />
                     </TableCell>
-                    <TableCell className="text-right">{s.test_score}</TableCell>
                     <TableCell className="text-muted-foreground text-xs">{formatDateTime(s.posted_time)}</TableCell>
                   </TableRow>
                 ))}
