@@ -86,11 +86,9 @@ export function Nav() {
                   </Link>
                 )}
                 <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <button className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground h-9 px-3">
-                      <User className="size-4" />
-                      {user.nickname}
-                    </button>
+                  <DropdownMenuTrigger className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground h-9 px-3">
+                    <User className="size-4" />
+                    {user.nickname}
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" sideOffset={8}>
                     <DropdownMenuItem onClick={() => router.push('/profile')}>
@@ -127,10 +125,8 @@ export function Nav() {
           <div className="md:hidden flex items-center gap-2">
             <ThemeToggle />
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger>
-                <button className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-9 w-9" aria-label="Open menu">
-                  <Menu className="size-5" />
-                </button>
+              <SheetTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-9 w-9" aria-label="Open menu">
+                <Menu className="size-5" />
               </SheetTrigger>
               <SheetContent side="right">
                 <SheetHeader>
