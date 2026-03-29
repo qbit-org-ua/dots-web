@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, UserPlus, LogOut as LogOutIcon, CheckCircle2 } from 'lucide-react';
+import { Loader2, UserPlus, CheckCircle2 } from 'lucide-react';
 import type { ContestDetail, ContestData } from '@/types';
 
 const STATUS_BADGE_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -37,12 +37,8 @@ function ContestDetailSkeleton() {
     <div className="space-y-6">
       <Skeleton className="h-10 w-48" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <Skeleton className="h-48 w-full rounded-lg" />
-        </div>
-        <div className="space-y-4">
-          <Skeleton className="h-64 w-full rounded-lg" />
-        </div>
+        <div className="md:col-span-2"><Skeleton className="h-48 w-full rounded-lg" /></div>
+        <div><Skeleton className="h-64 w-full rounded-lg" /></div>
       </div>
     </div>
   );
@@ -73,17 +69,11 @@ export default function ContestDetailPage() {
     onSuccess: () => refetch(),
   });
 
-  const leaveMutation = useMutation({
-    mutationFn: () => api.post(`/api/v1/contests/${contestId}/logout`),
-    onSuccess: () => refetch(),
-  });
-
   if (isLoading) return <ContestDetailSkeleton />;
 
   const contest: ContestDetail = data?.contest;
   const contestData: ContestData = data?.contest_data;
   const status: string = data?.status ?? '';
-  const regStatus: number | null = data?.reg_status ?? null;
   const userRegistered: boolean = data?.user_registered ?? false;
 
   if (!contest) {
@@ -105,56 +95,11 @@ export default function ContestDetailPage() {
   function getRegModeLabel(options: number): string {
     if (options & 0x04) return t('regMode.internal');
     if (options & 0x02) return t('regMode.confirm');
-    if (options & 0x01) return t('regMode.free');
     return t('regMode.free');
   }
 
-  const regStatusLabel = regStatus === null || regStatus === undefined
-    ? t('regStatus.0')
-    : (t('regStatus.' + regStatus));
-
   return (
     <div className="space-y-6">
-      {/* Registration actions */}
-      {user && (
-        <div className="flex gap-3 items-center">
-          {!userRegistered ? (
-            <Button
-              onClick={() => registerMutation.mutate()}
-              disabled={registerMutation.isPending}
-              size="lg"
-              className="shadow-md"
-            >
-              {registerMutation.isPending ? (
-                <><Loader2 className="size-4 mr-2 animate-spin" />{t('contests.registering')}</>
-              ) : (
-                <><UserPlus className="size-4 mr-2" />{t('contests.registerForContest')}</>
-              )}
-            </Button>
-          ) : (
-            <>
-              <Badge variant="default" className="gap-1.5 py-1 px-3 text-sm">
-                <CheckCircle2 className="size-3.5" />
-                {t('contests.registered')}
-              </Badge>
-              <Button
-                onClick={() => leaveMutation.mutate()}
-                disabled={leaveMutation.isPending}
-                variant="destructive"
-                size="sm"
-              >
-                {leaveMutation.isPending ? (
-                  <><Loader2 className="size-4 mr-1 animate-spin" />{t('contests.leaving')}</>
-                ) : (
-                  <><LogOutIcon className="size-3.5 mr-1" />{t('contests.leaveContest')}</>
-                )}
-              </Button>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Content + details */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
           <CardContent>
@@ -201,7 +146,6 @@ export default function ContestDetailPage() {
                   <dd><Badge variant={STATUS_BADGE_VARIANT[status] || 'secondary'}>{t('status.' + status)}</Badge></dd>
                 </div>
 
-                {/* Progress bar for elapsed/remaining */}
                 {elapsed > 0 && endTime > 0 && durationSeconds > 0 && (
                   <div className="pt-1 space-y-1.5">
                     <div className="flex justify-between text-xs text-muted-foreground">
@@ -209,10 +153,7 @@ export default function ContestDetailPage() {
                       <span>{t('contests.remaining')}</span>
                     </div>
                     <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-1000"
-                        style={{ width: `${progress}%` }}
-                      />
+                      <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
                     </div>
                     <div className="flex justify-between text-xs font-mono">
                       <span>{formatTimeRemaining(Math.min(elapsed, durationSeconds))}</span>
@@ -225,10 +166,33 @@ export default function ContestDetailPage() {
                   <dt className="text-muted-foreground">{t('contests.registration')}</dt>
                   <dd className="font-medium text-xs">{getRegModeLabel(contest.options)}</dd>
                 </div>
+
+                {/* Registration status / action */}
                 {user && (
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pt-1 border-t border-border">
                     <dt className="text-muted-foreground">{t('contests.yourStatus')}</dt>
-                    <dd className="font-medium text-xs">{regStatusLabel}</dd>
+                    <dd>
+                      {userRegistered ? (
+                        <Badge variant="default" className="gap-1">
+                          <CheckCircle2 className="size-3" />
+                          {t('contests.registered')}
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => registerMutation.mutate()}
+                          disabled={registerMutation.isPending}
+                          className="h-7 text-xs gap-1"
+                        >
+                          {registerMutation.isPending ? (
+                            <Loader2 className="size-3 animate-spin" />
+                          ) : (
+                            <UserPlus className="size-3" />
+                          )}
+                          {registerMutation.isPending ? t('contests.registering') : t('contests.registerForContest')}
+                        </Button>
+                      )}
+                    </dd>
                   </div>
                 )}
               </dl>
