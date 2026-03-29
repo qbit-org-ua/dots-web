@@ -69,13 +69,12 @@ export default function ContestLayout({ children }: { children: React.ReactNode 
         {/* Breadcrumb + contest info */}
         <div className="py-3">
           <nav className="flex items-center text-sm text-muted-foreground mb-1">
-            <Link href="/contests" className="hover:text-primary">{t('contests.title')}</Link>
-            <svg className="w-4 h-4 mx-1 text-muted-foreground/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
             <span className="text-foreground font-medium truncate max-w-md">
               {isLoading ? '...' : contest?.title || `Contest #${contestId}`}
             </span>
+            <svg className="w-4 h-4 mx-1 text-muted-foreground/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
             {status && (
               <Badge variant={STATUS_BADGE_VARIANT[status] || 'secondary'}>{t('status.' + status)}</Badge>
             )}

@@ -54,7 +54,7 @@ export function AcmStandings({ data, contestId, currentUserId, canViewAll = fals
         </thead>
         <tbody className="divide-y divide-border">
           {data.users.map((user) => {
-            const isMe = currentUserId === user.user_id;
+            const isMe = currentUserId != null && Number(currentUserId) === Number(user.user_id);
             return (
               <tr key={user.user_id} className={cn('hover:bg-muted/50', isMe && 'bg-primary/5 font-medium')}>
                 <td className="px-3 py-2 text-muted-foreground text-center text-xs font-mono">
@@ -68,7 +68,7 @@ export function AcmStandings({ data, contestId, currentUserId, canViewAll = fals
                 {user.scores.map((ps: ProblemScore, idx: number) => {
                   const solved = ps.is_solved;
                   const attempts = ps.attempts;
-                  const canLink = ps.solution_id && contestId && (isMe || canViewAll);
+                  const canLink = ps.solution_id != null && ps.solution_id > 0 && contestId && (isMe || canViewAll);
                   const cellContent = solved ? (
                     <div>
                       <div className={cn('font-bold', ps.is_first_solve ? 'text-green-700 dark:text-green-300' : 'text-green-600 dark:text-green-400')}>
@@ -89,7 +89,7 @@ export function AcmStandings({ data, contestId, currentUserId, canViewAll = fals
                       )}
                     >
                       {canLink && cellContent ? (
-                        <Link href={`/contests/${contestId}/solutions/${ps.solution_id}`} className="block hover:underline">
+                        <Link href={`/contests/${contestId}/solutions/${ps.solution_id}`} className="block underline decoration-dotted underline-offset-2 hover:decoration-solid">
                           {cellContent}
                         </Link>
                       ) : cellContent}

@@ -52,7 +52,7 @@ export function ClassicStandings({ data, contestId, currentUserId, canViewAll = 
         </thead>
         <tbody className="divide-y divide-border">
           {data.users.map((user) => {
-            const isMe = currentUserId === user.user_id;
+            const isMe = currentUserId != null && Number(currentUserId) === Number(user.user_id);
             return (
               <tr key={user.user_id} className={cn('hover:bg-muted/50', isMe && 'bg-primary/5 font-medium')}>
                 <td className="px-3 py-2 text-muted-foreground text-center text-xs font-mono">
@@ -68,14 +68,14 @@ export function ClassicStandings({ data, contestId, currentUserId, canViewAll = 
                   const score = parseFloat(ps.score) || 0;
                   const maxScore = 100;
                   const display = score > 0 ? ps.score : ps.is_solved ? '0' : '';
-                  const canLink = ps.solution_id && contestId && (isMe || canViewAll);
+                  const canLink = ps.solution_id != null && ps.solution_id > 0 && contestId && (isMe || canViewAll);
                   return (
                     <td
                       key={idx}
                       className={cn('px-3 py-2 text-center font-mono text-xs', scoreColor(score, maxScore))}
                     >
                       {canLink && display ? (
-                        <Link href={`/contests/${contestId}/solutions/${ps.solution_id}`} className="hover:underline">
+                        <Link href={`/contests/${contestId}/solutions/${ps.solution_id}`} className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
                           {display}
                         </Link>
                       ) : (
