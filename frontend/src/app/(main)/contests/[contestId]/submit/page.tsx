@@ -117,13 +117,6 @@ export default function ContestSubmitPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Submit Solution</h1>
-        <Link href={`/contests/${contestId}`} className="text-sm text-blue-600 hover:underline">
-          Back to Contest
-        </Link>
-      </div>
-
       <Card>
         <div className="mb-4 rounded-md bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
           Зверніть увагу: після відправки, рішення змінити не можна. Але, якщо це дозволено правилами

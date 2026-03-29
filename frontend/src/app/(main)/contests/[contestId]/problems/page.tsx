@@ -26,13 +26,6 @@ export default function ContestProblemsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Problems</h1>
-        <Link href={`/contests/${contestId}`} className="text-sm text-blue-600 hover:underline">
-          Back to Contest
-        </Link>
-      </div>
-
       {isLoading ? (
         <Spinner />
       ) : problems.length === 0 ? (

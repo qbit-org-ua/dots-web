@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -43,13 +42,6 @@ export default function ContestParticipantsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Participants</h1>
-        <Link href={`/contests/${contestId}`} className="text-sm text-blue-600 hover:underline">
-          Back to Contest
-        </Link>
-      </div>
-
       <div>
         <input
           type="text"

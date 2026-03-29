@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -12,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import type { ContestDetail, ContestData, ContestPage } from '@/types';
+import type { ContestDetail, ContestData } from '@/types';
 
 function getRegModeLabel(options: number): string {
   if (options & 0x04) return REG_MODE_LABELS[0x04];
@@ -38,9 +37,7 @@ export default function ContestDetailPage() {
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(Math.floor(Date.now() / 1000));
-    }, 1000);
+    const interval = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -66,7 +63,6 @@ export default function ContestDetailPage() {
 
   const contest: ContestDetail = data?.contest;
   const contestData: ContestData = data?.contest_data;
-  const pages: ContestPage[] = data?.pages ?? [];
   const status: string = data?.status ?? '';
   const regStatus: number | null = data?.reg_status ?? null;
   const userRegistered: boolean = data?.user_registered ?? false;
@@ -75,7 +71,6 @@ export default function ContestDetailPage() {
     return <p className="text-center py-8 text-gray-500">Contest not found.</p>;
   }
 
-  const tabs = pages.filter((p) => p.status !== 'hidden');
   const durationSeconds = contestData?.duration_time ?? 0;
   const endTime = durationSeconds > 0 ? contest.start_time + durationSeconds : 0;
   const elapsed = now - contest.start_time;
@@ -87,62 +82,25 @@ export default function ContestDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{contest.title}</h1>
-          <div className="flex items-center gap-3 mt-2 text-sm text-gray-600">
-            <span>{CONTEST_TYPES[contest.contest_type] || contest.contest_type}</span>
-            <Badge color={(STATUS_COLORS[status] || 'neutral') as 'success' | 'warning' | 'danger' | 'info' | 'neutral'}>
-              {status === 'going' || status === 'Going' ? 'Going' : status === 'finished' || status === 'Finished' ? 'Finished' : status === 'wait' || status === 'Wait' ? 'Waiting' : status}
-            </Badge>
-          </div>
-        </div>
-        <div className="flex gap-2 items-center">
-          {user && !userRegistered && (
-            <Button
-              onClick={() => registerMutation.mutate()}
-              loading={registerMutation.isPending}
-              variant="success"
-            >
+      {/* Registration actions */}
+      {user && (
+        <div className="flex gap-3 items-center">
+          {!userRegistered ? (
+            <Button onClick={() => registerMutation.mutate()} loading={registerMutation.isPending} variant="success">
               Register for Contest
             </Button>
-          )}
-          {userRegistered && (
+          ) : (
             <>
               <Badge color="success">Registered</Badge>
-              <Button
-                onClick={() => leaveMutation.mutate()}
-                loading={leaveMutation.isPending}
-                variant="danger"
-                className="ml-2"
-              >
+              <Button onClick={() => leaveMutation.mutate()} loading={leaveMutation.isPending} variant="danger" size="sm">
                 Leave Contest
               </Button>
             </>
           )}
         </div>
-      </div>
+      )}
 
-      <nav className="flex gap-1 border-b border-gray-200 overflow-x-auto">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.name}
-            href={
-              tab.name === 'info'
-                ? `/contests/${contestId}`
-                : tab.name === 'users'
-                ? `/contests/${contestId}/participants`
-                : tab.name === 'upload'
-                ? `/contests/${contestId}/submit`
-                : `/contests/${contestId}/${tab.name}`
-            }
-            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 whitespace-nowrap transition-colors"
-          >
-            {tab.title}
-          </Link>
-        ))}
-      </nav>
-
+      {/* Content + details */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
           {contest.info ? (
@@ -177,18 +135,12 @@ export default function ContestDetailPage() {
               )}
               <div>
                 <dt className="text-gray-500">Status</dt>
-                <dd className="font-medium">
-                  <Badge color={(STATUS_COLORS[status] || 'neutral') as 'success' | 'warning' | 'danger' | 'info' | 'neutral'}>
-                    {status === 'going' || status === 'Going' ? 'Going' : status === 'finished' || status === 'Finished' ? 'Finished' : status === 'wait' || status === 'Wait' ? 'Waiting' : status}
-                  </Badge>
-                </dd>
+                <dd><Badge color={(STATUS_COLORS[status] || 'neutral') as 'success' | 'warning' | 'danger' | 'info' | 'neutral'}>{status}</Badge></dd>
               </div>
               {elapsed > 0 && endTime > 0 && (
                 <div>
                   <dt className="text-gray-500">Time Elapsed</dt>
-                  <dd className="font-medium font-mono">
-                    {formatTimeRemaining(Math.min(elapsed, durationSeconds))}
-                  </dd>
+                  <dd className="font-medium font-mono">{formatTimeRemaining(Math.min(elapsed, durationSeconds))}</dd>
                 </div>
               )}
               {remaining > 0 && (
