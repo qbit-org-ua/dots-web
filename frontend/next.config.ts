@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  distDir: process.env.NODE_ENV === 'production' ? '.next-prod' : '.next-dev',
+  allowedDevOrigins: ['127.0.0.1'],
   async rewrites() {
     return [
       { source: '/api/:path*', destination: 'http://172.17.0.5:3001/api/:path*' },

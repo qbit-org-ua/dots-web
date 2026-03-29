@@ -15,11 +15,15 @@ import type { Solution } from '@/types';
 export default function SolutionsPage() {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const problemId = searchParams.get('problem_id');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['solutions', page],
+    queryKey: ['solutions', page, problemId],
     queryFn: async () => {
-      const res = await api.get('/api/v1/solutions', { params: { page, per_page: 25, user_id: user?.user_id } });
+      const params: Record<string, string | number> = { page, per_page: 25, user_id: user!.user_id };
+      if (problemId) params.problem_id = problemId;
+      const res = await api.get('/api/v1/solutions', { params });
       return res.data;
     },
     enabled: !!user,

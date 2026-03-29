@@ -1,17 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 
-export default function ProfilePage() {
-  const { user } = useAuth();
+export default function AdminEditUserPage() {
+  const params = useParams();
+  const userId = params.userId as string;
+
   const [form, setForm] = useState({
     fio: '', city_name: '', region_name: '', country_name: '', job: '',
     u_institution_name: '', u_specialty: '', u_kurs: '',
@@ -22,12 +24,11 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['user', user?.user_id],
+    queryKey: ['user', userId],
     queryFn: async () => {
-      const res = await api.get(`/api/v1/users/${user!.user_id}`);
+      const res = await api.get(`/api/v1/users/${userId}`);
       return res.data;
     },
-    enabled: !!user,
   });
 
   useEffect(() => {
@@ -43,16 +44,9 @@ export default function ProfilePage() {
     }
   }, [data]);
 
-  if (!user) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">Please sign in to edit your profile.</p>
-        <Link href="/login" className="text-blue-600 hover:underline">Sign In</Link>
-      </div>
-    );
-  }
-
   if (isLoading) return <Spinner />;
+
+  const nickname = data?.user?.nickname || `User #${userId}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +54,7 @@ export default function ProfilePage() {
     setSuccess('');
     setLoading(true);
     try {
-      await api.put(`/api/v1/users/${user.user_id}`, form);
+      await api.put(`/api/v1/users/${userId}`, form);
       setSuccess('Profile updated successfully.');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Update failed';
@@ -77,10 +71,11 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
-        <Link href="/profile/password" className="text-sm text-blue-600 hover:underline">
-          Change Password
-        </Link>
+        <h1 className="text-2xl font-bold text-gray-900">Edit User: {nickname}</h1>
+        <div className="flex gap-4 text-sm">
+          <Link href={`/admin/users/${userId}/password`} className="text-blue-600 hover:underline">Change Password</Link>
+          <Link href={`/users/${userId}`} className="text-blue-600 hover:underline">View Profile</Link>
+        </div>
       </div>
 
       <Card>

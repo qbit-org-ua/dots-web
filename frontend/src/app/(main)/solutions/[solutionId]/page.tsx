@@ -126,7 +126,12 @@ export default function SolutionDetailPage() {
       </Card>
 
       <div className="flex gap-4 text-sm">
-        <Link href={`/problems/${solution.problem_id}`} className="text-blue-600 hover:underline">
+        <Link
+          href={solution.contest_id
+            ? `/contests/${solution.contest_id}/solutions?problem_id=${solution.problem_id}`
+            : `/solutions?problem_id=${solution.problem_id}`}
+          className="text-blue-600 hover:underline"
+        >
           » All my solutions for this problem
         </Link>
         {solution.contest_id && (
