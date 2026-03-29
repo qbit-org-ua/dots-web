@@ -157,7 +157,7 @@ pub async fn list_contests(
             .bind(u.user_id)
             .fetch_optional(&state.pool)
             .await?;
-            reg.map(|_| "registered".to_string())
+            reg.map(|(s,)| s.to_string())
         } else {
             None
         };

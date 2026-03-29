@@ -104,8 +104,8 @@ function ContestSection({
   }
 
   const sorted = [...contests].sort((a, b) => {
-    const aReg = a.reg_status !== null && a.reg_status !== undefined && Number(a.reg_status) === 3;
-    const bReg = b.reg_status !== null && b.reg_status !== undefined && Number(b.reg_status) === 3;
+    const aReg = a.reg_status !== null && a.reg_status !== undefined;
+    const bReg = b.reg_status !== null && b.reg_status !== undefined;
     if (aReg && !bReg) return -1;
     if (!aReg && bReg) return 1;
     return 0;
@@ -125,7 +125,7 @@ function ContestSection({
               <ContestCard
                 contest={c}
                 t={t}
-                isRegistered={c.reg_status !== null && c.reg_status !== undefined && Number(c.reg_status) === 3}
+                isRegistered={c.reg_status !== null && c.reg_status !== undefined}
               />
             </CarouselItem>
           ))}
