@@ -1,82 +1,171 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { formatDateTime } from '@/lib/utils';
+import { useAuth } from '@/lib/auth';
+import { formatDateTime, formatDuration } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Pagination } from '@/components/ui/pagination';
+import { Trophy, Clock, Archive, Users, Calendar, ChevronRight } from 'lucide-react';
 import type { Contest } from '@/types';
 
-function ContestTableSkeleton() {
+function ContestCard({ contest, t, isRegistered }: { contest: Contest; t: (k: string) => string; isRegistered: boolean }) {
   return (
-    <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-12" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-24" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
-            <TableHead className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <TableRow key={i}>
-              <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="h-4 w-8 ml-auto" /></TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <Link href={`/contests/${contest.contest_id}`} className="block min-w-[300px] max-w-[350px] flex-shrink-0 snap-start">
+      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
+              {contest.title}
+            </h3>
+            {isRegistered && (
+              <Badge variant="default" className="shrink-0 text-xs">
+                {t('contests.registered')}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="outline" className="font-normal text-xs">
+              {t('contestType.' + contest.contest_type)}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Calendar className="size-3" />
+              {formatDateTime(contest.start_time)}
+            </span>
+            <span className="flex items-center gap-1">
+              <Users className="size-3" />
+              {contest.user_count}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function SectionSkeleton() {
+  return (
+    <div className="flex gap-4 overflow-hidden">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="min-w-[300px] max-w-[350px] flex-shrink-0">
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-20" />
+              <div className="flex gap-4">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ))}
     </div>
   );
 }
 
+function ContestSection({
+  icon,
+  title,
+  contests,
+  t,
+  userId,
+  emptyMessage,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  contests: Contest[];
+  t: (k: string) => string;
+  userId?: number;
+  emptyMessage: string;
+}) {
+  if (contests.length === 0) {
+    return (
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          {icon}
+          {title}
+          <span className="text-sm font-normal text-muted-foreground">(0)</span>
+        </h2>
+        <p className="text-sm text-muted-foreground py-4">{emptyMessage}</p>
+      </section>
+    );
+  }
+
+  // Sort: registered user's contests first
+  const sorted = [...contests].sort((a, b) => {
+    const aReg = a.reg_status !== null && a.reg_status !== undefined;
+    const bReg = b.reg_status !== null && b.reg_status !== undefined;
+    if (aReg && !bReg) return -1;
+    if (!aReg && bReg) return 1;
+    return 0;
+  });
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        {icon}
+        {title}
+        <span className="text-sm font-normal text-muted-foreground">({contests.length})</span>
+      </h2>
+      <div className="relative">
+        <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin">
+          {sorted.map((c) => (
+            <ContestCard
+              key={c.contest_id}
+              contest={c}
+              t={t}
+              isRegistered={c.reg_status !== null && c.reg_status !== undefined && Number(c.reg_status) === 3}
+            />
+          ))}
+        </div>
+        {contests.length > 3 && (
+          <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-background to-transparent" />
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function ContestsPage() {
-  const [page, setPage] = useState(1);
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['contests', page],
+    queryKey: ['contests', 'all'],
     queryFn: async () => {
-      const res = await api.get('/api/v1/contests', { params: { page, per_page: 20 } });
+      const res = await api.get('/api/v1/contests', { params: { per_page: 500 } });
       return res.data;
     },
   });
 
   const contests: Contest[] = data?.contests ?? [];
-  const total = data?.total ?? 0;
-  const perPage = data?.per_page ?? 20;
-  const totalPages = Math.ceil(total / perPage);
 
-  function statusBadge(status: string) {
-    switch (status) {
-      case 'going':
-        return <Badge className="bg-green-600 text-white border-transparent">{t('status.Going')}</Badge>;
-      case 'finished':
-        return <Badge variant="secondary">{t('status.Finished')}</Badge>;
-      case 'wait':
-        return <Badge className="bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30">{t('status.Wait')}</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  }
+  const inProgress = contests.filter((c) => c.status === 'Going' || c.status === 'GoingFrozen');
+  const upcoming = contests.filter((c) => c.status === 'Wait');
+  const archived = contests.filter((c) => c.status === 'Finished' || c.status === 'FinishedFrozen');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       <h1 className="text-2xl font-bold text-foreground">{t('contests.title')}</h1>
 
       {isLoading ? (
-        <ContestTableSkeleton />
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-40" />
+            <SectionSkeleton />
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-40" />
+            <SectionSkeleton />
+          </div>
+        </div>
       ) : contests.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <div className="text-4xl">🏆</div>
@@ -85,42 +174,30 @@ export default function ContestsPage() {
         </div>
       ) : (
         <>
-          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
-            <div className="overflow-x-auto relative">
-              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('contests.tableTitle')}</TableHead>
-                    <TableHead>{t('contests.tableType')}</TableHead>
-                    <TableHead>{t('contests.tableStartTime')}</TableHead>
-                    <TableHead>{t('contests.tableStatus')}</TableHead>
-                    <TableHead className="text-right">{t('contests.tableParticipants')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contests.map((c) => (
-                    <TableRow key={c.contest_id}>
-                      <TableCell>
-                        <Link href={`/contests/${c.contest_id}`} className="text-primary hover:underline font-medium">
-                          {c.title}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-normal">
-                          {t('contestType.' + c.contest_type)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatDateTime(c.start_time)}</TableCell>
-                      <TableCell>{statusBadge(c.status)}</TableCell>
-                      <TableCell className="text-right">{c.user_count}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <ContestSection
+            icon={<Trophy className="size-5 text-green-600" />}
+            title={t('contests.inProgress')}
+            contests={inProgress}
+            t={t}
+            userId={user?.user_id}
+            emptyMessage={t('contests.noInProgress')}
+          />
+          <ContestSection
+            icon={<Clock className="size-5 text-yellow-600" />}
+            title={t('contests.upcoming')}
+            contests={upcoming}
+            t={t}
+            userId={user?.user_id}
+            emptyMessage={t('contests.noUpcoming')}
+          />
+          <ContestSection
+            icon={<Archive className="size-5 text-muted-foreground" />}
+            title={t('contests.archived')}
+            contests={archived}
+            t={t}
+            userId={user?.user_id}
+            emptyMessage={t('contests.noArchived')}
+          />
         </>
       )}
     </div>

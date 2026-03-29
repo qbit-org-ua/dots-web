@@ -751,14 +751,27 @@ pub async fn submit_solution(
 
     let solution_id = result.last_insert_id() as u32;
 
-    // Save source file
+    // Save source file to var/sorted/{uid:04}/{pid:04}/{filename} (matching PHP layout)
     let filename = crate::services::file_storage::solution_filename(
         solution_id, problem_id, user.user_id, lang_id as i32, "F",
     );
-    let sources_dir = format!("{}/sources", state.config.upload_dir);
-    tokio::fs::create_dir_all(&sources_dir).await.map_err(|e| AppError::Internal(e.into()))?;
-    let source_path = format!("{}/{}", sources_dir, filename);
+    let sorted_dir = format!("{}/var/sorted/{:04}/{:04}", state.config.upload_dir, user.user_id, problem_id);
+    tokio::fs::create_dir_all(&sorted_dir).await.map_err(|e| AppError::Internal(e.into()))?;
+    let source_path = format!("{}/{}", sorted_dir, filename);
     tokio::fs::write(&source_path, &source_data).await.map_err(|e| AppError::Internal(e.into()))?;
+
+    // Update solution with filename and checksum
+    let checksum = {
+        use md5::Digest;
+        let mut hasher = md5::Md5::new();
+        hasher.update(&source_data);
+        hex::encode(hasher.finalize())
+    };
+    sqlx::query("UPDATE labs_solutions SET filename = ?, checksum = ? WHERE solution_id = ?")
+        .bind(&filename)
+        .bind(&checksum)
+        .execute(&state.pool)
+        .await?;
 
     Ok(Json(json!({ "ok": true, "solution_id": solution_id })))
 }

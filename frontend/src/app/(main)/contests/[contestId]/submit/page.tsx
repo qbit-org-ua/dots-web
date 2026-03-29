@@ -105,7 +105,7 @@ export default function ContestSubmitPage() {
     try {
       const formData = new FormData();
       formData.append('problem_id', problemId);
-      formData.append('language_id', languageId);
+      formData.append('lang_id', languageId);
 
       if (hasFile && file) {
         formData.append('file', file);
@@ -113,12 +113,18 @@ export default function ContestSubmitPage() {
         formData.append('source', source);
       }
 
-      await api.post(`/api/v1/contests/${contestId}/solutions`, formData, {
+      const res = await api.post(`/api/v1/contests/${contestId}/solutions`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      router.push(`/contests/${contestId}/solutions`);
+      const solutionId = res.data?.solution_id;
+      if (solutionId) {
+        router.push(`/solutions/${solutionId}`);
+      } else {
+        router.push(`/contests/${contestId}/solutions`);
+      }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t('submit.submissionFailed');
+      const errData = (err as { response?: { data?: { error?: { message?: string } | string } } })?.response?.data?.error;
+      const msg = typeof errData === 'string' ? errData : (errData && typeof errData === 'object' ? errData.message : null) || t('submit.submissionFailed');
       setError(msg);
     } finally {
       setLoading(false);
