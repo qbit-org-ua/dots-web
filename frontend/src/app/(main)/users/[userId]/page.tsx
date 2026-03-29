@@ -5,14 +5,27 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { formatDate, formatDateTime } from '@/lib/utils';
+import { ACCESS } from '@/lib/constants';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import type { UserFull } from '@/types';
 
+function InfoRow({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
+  return (
+    <div className="flex justify-between border-b border-gray-100 py-2">
+      <dt className="text-gray-500 shrink-0">{label}</dt>
+      <dd className="font-medium text-right">{value}</dd>
+    </div>
+  );
+}
+
 export default function UserProfilePage() {
   const params = useParams();
   const userId = params.userId as string;
+  const { user: currentUser } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ['user', userId],
@@ -29,10 +42,13 @@ export default function UserProfilePage() {
     return <p className="text-center py-8 text-gray-500">User not found.</p>;
   }
 
+  const isAdmin = currentUser && (currentUser.access & ACCESS.SYSTEM_ADMIN) !== 0;
+  const isOwnProfile = currentUser?.user_id === user.user_id;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{user.nickname}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">User #{user.user_id}</h1>
         <Link href="/users" className="text-sm text-blue-600 hover:underline">
           Back to Users
         </Link>
@@ -59,53 +75,57 @@ export default function UserProfilePage() {
           </Card>
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 space-y-6">
           <Card title="Profile Information">
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <dt className="text-gray-500">Email</dt>
-                <dd className="font-medium">{user.email}</dd>
-              </div>
-              {user.city_name && (
-                <div>
-                  <dt className="text-gray-500">City</dt>
-                  <dd className="font-medium">{user.city_name}</dd>
-                </div>
-              )}
-              {user.region_name && (
-                <div>
-                  <dt className="text-gray-500">Region</dt>
-                  <dd className="font-medium">{user.region_name}</dd>
-                </div>
-              )}
-              {user.u_institution_name && (
-                <div>
-                  <dt className="text-gray-500">Institution</dt>
-                  <dd className="font-medium">{user.u_institution_name}</dd>
-                </div>
-              )}
-              {user.u_specialty && (
-                <div>
-                  <dt className="text-gray-500">Specialty</dt>
-                  <dd className="font-medium">{user.u_specialty}</dd>
-                </div>
-              )}
-              {user.job && (
-                <div>
-                  <dt className="text-gray-500">Job</dt>
-                  <dd className="font-medium">{user.job}</dd>
-                </div>
-              )}
-              <div>
-                <dt className="text-gray-500">Registered</dt>
-                <dd className="font-medium">{user.created ? formatDate(user.created) : '-'}</dd>
-              </div>
-              <div>
-                <dt className="text-gray-500">Last Login</dt>
-                <dd className="font-medium">{user.lastlogin ? formatDateTime(user.lastlogin) : '-'}</dd>
-              </div>
+            <dl className="text-sm">
+              <InfoRow label="Nickname" value={user.nickname} />
+              <InfoRow label="Full Name (ПІБ)" value={user.fio} />
+              <InfoRow label="Email" value={user.email} />
+              <InfoRow label="Region (Область)" value={user.o_region || user.u_region} />
+              <InfoRow label="District (Район)" value={user.o_district} />
+              <InfoRow label="Institution" value={user.o_full_name || user.o_short_name || user.u_institution_name} />
+              <InfoRow label="Grade (Клас)" value={user.o_grade} />
+              <InfoRow label="Specialty" value={user.u_specialty} />
+              <InfoRow label="Course" value={user.u_kurs} />
+              <InfoRow label="City" value={user.city_name} />
+              <InfoRow label="Country" value={user.country_name} />
+              <InfoRow label="Job" value={user.job} />
+              <InfoRow label="Registered" value={user.created ? formatDate(user.created) : '-'} />
+              <InfoRow label="Last Login" value={user.lastlogin ? formatDateTime(user.lastlogin) : '-'} />
             </dl>
           </Card>
+
+          {user.u_certificate && (
+            <Card title="Certificate / Consent">
+              <div className="text-sm prose max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: user.u_certificate }} />
+            </Card>
+          )}
+
+          {user.o_cert && (
+            <Card title="Olympiad Info">
+              <div className="text-sm prose max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: user.o_cert }} />
+            </Card>
+          )}
+
+          {user.u_near && (
+            <Card title="Additional Info">
+              <div className="text-sm prose max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: user.u_near }} />
+            </Card>
+          )}
+
+          {(isAdmin || isOwnProfile) && (
+            <div className="flex flex-wrap gap-4 text-sm">
+              <Link href={isOwnProfile ? '/profile' : `/admin/users/${user.user_id}/edit`} className="text-blue-600 hover:underline">
+                Edit profile
+              </Link>
+              <Link href={isOwnProfile ? '/profile/password' : `/admin/users/${user.user_id}/password`} className="text-blue-600 hover:underline">
+                Change password
+              </Link>
+              <Link href={`/solutions?user_id=${user.user_id}`} className="text-blue-600 hover:underline">
+                All solutions by this user
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>
