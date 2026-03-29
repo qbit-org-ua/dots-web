@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { formatDuration } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -107,7 +107,7 @@ export default function ContestSolutionsPage() {
                 {solutions.map((s) => (
                   <TableRow
                     key={s.solution_id}
-                    className="cursor-pointer"
+                    className={cn('cursor-pointer', s.test_result === 0 && 'bg-green-500/5')}
                     onClick={() => router.push(`/contests/${contestId}/solutions/${s.solution_id}`)}
                   >
                     <TableCell className="text-muted-foreground font-mono text-xs">

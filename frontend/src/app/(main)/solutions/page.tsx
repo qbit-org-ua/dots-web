@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { formatDateTime } from '@/lib/utils';
+import { cn, formatDateTime } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from '@/components/ui/pagination';
@@ -115,7 +115,7 @@ export default function SolutionsPage() {
                   {solutions.map((s) => (
                     <TableRow
                       key={s.solution_id}
-                      className="cursor-pointer"
+                      className={cn('cursor-pointer', s.test_result === 0 && 'bg-green-500/5')}
                       onClick={() => {
                         const cid = s.contest_id;
                         if (cid) {

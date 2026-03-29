@@ -85,7 +85,7 @@ export default function ContestProblemsPage() {
               </TableHeader>
               <TableBody>
                 {problems.map((p) => (
-                  <TableRow key={p.problem_id}>
+                  <TableRow key={p.problem_id} className={p.user_result === 0 ? 'bg-green-500/5' : undefined}>
                     <TableCell className="font-mono font-bold text-muted-foreground">{p.short_name}</TableCell>
                     <TableCell>
                       <Link href={`/contests/${contestId}/problems/${p.problem_id}`} className="text-primary hover:underline font-medium">
