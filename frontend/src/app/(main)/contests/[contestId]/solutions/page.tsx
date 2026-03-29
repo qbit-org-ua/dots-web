@@ -98,8 +98,8 @@ export default function ContestSolutionsPage() {
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
                   <TableHead>{t('solutions.tableProblem')}</TableHead>
-                  <TableHead>{t('solutions.tableResult')}</TableHead>
                   <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
+                  <TableHead>{t('solutions.tableResult')}</TableHead>
                   <TableHead>{t('solutions.tablePosted')}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -119,13 +119,13 @@ export default function ContestSolutionsPage() {
                         className="text-primary hover:underline font-medium"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {s.short_name ? `${s.short_name}. ` : ''}{s.problem_title || `#${s.problem_id}`}
+                        {s.short_name ? `${s.short_name}: ` : ''}{s.problem_title || `#${s.problem_id}`}
                       </Link>
                     </TableCell>
+                    <TableCell className="text-right font-mono">{s.test_score}</TableCell>
                     <TableCell>
                       <VerdictBadge result={s.test_result} full />
                     </TableCell>
-                    <TableCell className="text-right font-mono">{s.test_score}</TableCell>
                     <TableCell className="text-muted-foreground font-mono text-xs">
                       {s.contest_time ? formatDuration(s.contest_time) : '-'}
                     </TableCell>
