@@ -139,8 +139,12 @@
     "sourceUnavailable": "Source code is not available.",
     "testResults": "Test Results",
     "testNo": "Test",
+    "testNumber": "Test",
     "testResult": "Result",
     "testScore": "Score",
+    "time": "Time",
+    "memory": "Memory",
+    "sourceCode": "Source Code",
     "testTime": "Time",
     "testMemory": "Memory",
     "backToSolutions": "Back to Solutions"

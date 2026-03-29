@@ -139,8 +139,12 @@
     "sourceUnavailable": "Програмний код недоступний.",
     "testResults": "Результати тестів",
     "testNo": "Тест",
+    "testNumber": "Тест",
     "testResult": "Результат",
     "testScore": "Бали",
+    "time": "Час",
+    "memory": "Пам'ять",
+    "sourceCode": "Програмний код",
     "testTime": "Час",
     "testMemory": "Пам'ять",
     "backToSolutions": "Назад до розв'язків"
