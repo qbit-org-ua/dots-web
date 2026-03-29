@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +15,36 @@ import { FormSelect } from '@/components/ui/form-field';
 import { CodeEditor, getMonacoLanguage } from '@/components/code-editor';
 import { Loader2, Send } from 'lucide-react';
 import type { ContestProblem, Language, Solution } from '@/types';
+
+function draftKey(contestId: string, problemId: string): string {
+  return `dots-draft-${contestId}-${problemId}`;
+}
+
+function saveDraft(contestId: string, problemId: string, source: string) {
+  if (!problemId) return;
+  try {
+    if (source.trim()) {
+      sessionStorage.setItem(draftKey(contestId, problemId), source);
+    } else {
+      sessionStorage.removeItem(draftKey(contestId, problemId));
+    }
+  } catch { /* quota exceeded or unavailable */ }
+}
+
+function loadDraft(contestId: string, problemId: string): string {
+  if (!problemId) return '';
+  try {
+    return sessionStorage.getItem(draftKey(contestId, problemId)) || '';
+  } catch {
+    return '';
+  }
+}
+
+function clearDraft(contestId: string, problemId: string) {
+  try {
+    sessionStorage.removeItem(draftKey(contestId, problemId));
+  } catch { /* ignore */ }
+}
 
 export default function ContestSubmitPage() {
   const params = useParams();
@@ -34,7 +64,9 @@ export default function ContestSubmitPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [preselectApplied, setPreselectApplied] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: problemsData, isLoading: problemsLoading } = useQuery({
     queryKey: ['contest-problems', contestId],
@@ -52,7 +84,6 @@ export default function ContestSubmitPage() {
     },
   });
 
-  // Fetch user's recent solutions in this contest to detect last used language
   const { data: solutionsData } = useQuery({
     queryKey: ['contest-solutions-preselect', contestId],
     queryFn: async () => {
@@ -68,23 +99,59 @@ export default function ContestSubmitPage() {
   const languages: Language[] = languagesData?.languages ?? [];
   const userSolutions: Solution[] = solutionsData?.solutions ?? [];
 
+  // Recover draft on mount (initial problem from URL)
+  useEffect(() => {
+    if (preselectedProblem) {
+      const draft = loadDraft(contestId, preselectedProblem);
+      if (draft) {
+        setSource(draft);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Recover draft when problem changes (only if editor is not dirty)
+  const handleProblemChange = useCallback((newProblemId: string) => {
+    setProblemId(newProblemId);
+    if (!dirty) {
+      const draft = loadDraft(contestId, newProblemId);
+      setSource(draft);
+    }
+    setDirty(false);
+  }, [contestId, dirty]);
+
+  // Autosave with debounce
+  const handleSourceChange = useCallback((val: string) => {
+    setSource(val);
+    setDirty(true);
+    if (val.trim()) {
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+    // Debounce save
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      saveDraft(contestId, problemId, val);
+    }, 500);
+  }, [contestId, problemId]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
+
   // Auto-select language from previous solutions
   useEffect(() => {
     if (preselectApplied || languageId || !userSolutions.length) return;
-
-    // If a problem is preselected, find the last solution for that problem
     if (problemId) {
-      const forProblem = userSolutions.find(
-        (s) => String(s.problem_id) === problemId
-      );
+      const forProblem = userSolutions.find((s) => String(s.problem_id) === problemId);
       if (forProblem) {
         setLanguageId(String(forProblem.lang_id));
         setPreselectApplied(true);
         return;
       }
     }
-
-    // Otherwise, use the most recent solution's language (solutions are ordered by posted_time DESC)
     if (userSolutions[0]) {
       setLanguageId(String(userSolutions[0].lang_id));
       setPreselectApplied(true);
@@ -140,6 +207,10 @@ export default function ContestSubmitPage() {
       const res = await api.post(`/api/v1/contests/${contestId}/solutions`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+
+      // Clear draft on successful submission
+      clearDraft(contestId, problemId);
+
       const solutionId = res.data?.solution_id;
       if (solutionId) {
         router.push(`/contests/${contestId}/solutions/${solutionId}`);
@@ -169,7 +240,7 @@ export default function ContestSubmitPage() {
             <FormSelect
               label={t('submit.problem')}
               value={problemId}
-              onChange={(e) => setProblemId(e.target.value)}
+              onChange={(e) => handleProblemChange(e.target.value)}
               options={problems.map((p) => ({
                 value: p.problem_id,
                 label: `${p.short_name}. ${p.title}`,
@@ -188,13 +259,7 @@ export default function ContestSubmitPage() {
               <Label>{t('submit.sourceCode')}</Label>
               <CodeEditor
                 value={source}
-                onChange={(val) => {
-                  setSource(val);
-                  if (val.trim()) {
-                    setFile(null);
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-                  }
-                }}
+                onChange={handleSourceChange}
                 language={getMonacoLanguage(languages.find(l => String(l.id) === languageId)?.name ?? '')}
                 height="400px"
               />
