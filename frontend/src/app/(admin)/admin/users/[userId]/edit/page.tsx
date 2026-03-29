@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -13,6 +14,7 @@ import { FormInput } from '@/components/ui/form-field';
 export default function AdminEditUserPage() {
   const params = useParams();
   const userId = params.userId as string;
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     fio: '', city_name: '', region_name: '', country_name: '', job: '',
@@ -55,10 +57,10 @@ export default function AdminEditUserPage() {
     setLoading(true);
     try {
       await api.put(`/api/v1/users/${userId}`, form);
-      setSuccess('Profile updated successfully.');
+      setSuccess(t('profile.profileUpdated'));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Update failed';
-      setError(typeof msg === 'string' ? msg : 'Update failed');
+      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || t('profile.updateFailed');
+      setError(typeof msg === 'string' ? msg : t('profile.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -71,10 +73,10 @@ export default function AdminEditUserPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Edit User: {nickname}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('admin.editUser')}: {nickname}</h1>
         <div className="flex gap-4 text-sm">
-          <Link href={`/admin/users/${userId}/password`} className="text-primary hover:underline">Change Password</Link>
-          <Link href={`/users/${userId}`} className="text-primary hover:underline">View Profile</Link>
+          <Link href={`/admin/users/${userId}/password`} className="text-primary hover:underline">{t('profile.changePassword')}</Link>
+          <Link href={`/users/${userId}`} className="text-primary hover:underline">{t('users.viewProfile')}</Link>
         </div>
       </div>
 
@@ -84,31 +86,31 @@ export default function AdminEditUserPage() {
             {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
             {success && <div className="bg-green-500/10 text-green-700 dark:text-green-300 text-sm rounded-md p-3">{success}</div>}
 
-            <FormInput label="Full Name" value={form.fio} onChange={handleChange('fio')} />
+            <FormInput label={t('profile.fullName')} value={form.fio} onChange={handleChange('fio')} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormInput label="City" value={form.city_name} onChange={handleChange('city_name')} />
-              <FormInput label="Region" value={form.region_name} onChange={handleChange('region_name')} />
+              <FormInput label={t('profile.city')} value={form.city_name} onChange={handleChange('city_name')} />
+              <FormInput label={t('profile.region')} value={form.region_name} onChange={handleChange('region_name')} />
             </div>
-            <FormInput label="Country" value={form.country_name} onChange={handleChange('country_name')} />
-            <FormInput label="Job" value={form.job} onChange={handleChange('job')} />
+            <FormInput label={t('profile.country')} value={form.country_name} onChange={handleChange('country_name')} />
+            <FormInput label={t('profile.job')} value={form.job} onChange={handleChange('job')} />
 
-            <h3 className="text-sm font-semibold text-foreground pt-2 border-t border-border">Student Info</h3>
-            <FormInput label="Institution" value={form.u_institution_name} onChange={handleChange('u_institution_name')} />
+            <h3 className="text-sm font-semibold text-foreground pt-2 border-t border-border">{t('profile.studentInfo')}</h3>
+            <FormInput label={t('profile.institution')} value={form.u_institution_name} onChange={handleChange('u_institution_name')} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormInput label="Specialty" value={form.u_specialty} onChange={handleChange('u_specialty')} />
-              <FormInput label="Course/Year" value={form.u_kurs} onChange={handleChange('u_kurs')} />
+              <FormInput label={t('profile.specialty')} value={form.u_specialty} onChange={handleChange('u_specialty')} />
+              <FormInput label={t('profile.courseYear')} value={form.u_kurs} onChange={handleChange('u_kurs')} />
             </div>
 
-            <h3 className="text-sm font-semibold text-foreground pt-2 border-t border-border">School/Organization</h3>
+            <h3 className="text-sm font-semibold text-foreground pt-2 border-t border-border">{t('profile.schoolOrg')}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormInput label="Region" value={form.o_region} onChange={handleChange('o_region')} />
-              <FormInput label="District" value={form.o_district} onChange={handleChange('o_district')} />
+              <FormInput label={t('profile.orgRegion')} value={form.o_region} onChange={handleChange('o_region')} />
+              <FormInput label={t('profile.orgDistrict')} value={form.o_district} onChange={handleChange('o_district')} />
             </div>
-            <FormInput label="School/Organization Name" value={form.o_full_name} onChange={handleChange('o_full_name')} />
-            <FormInput label="Grade" value={form.o_grade} onChange={handleChange('o_grade')} />
+            <FormInput label={t('profile.schoolOrgName')} value={form.o_full_name} onChange={handleChange('o_full_name')} />
+            <FormInput label={t('profile.grade')} value={form.o_grade} onChange={handleChange('o_grade')} />
 
             <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? t('admin.saving') : t('common.saveChanges')}
             </Button>
           </form>
         </CardContent>

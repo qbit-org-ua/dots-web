@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -14,6 +15,7 @@ export default function EditProblemPage() {
   const params = useParams();
   const problemId = params.problemId as string;
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     title: '',
@@ -60,7 +62,7 @@ export default function EditProblemPage() {
       await api.put(`/api/v1/admin/problems/${problemId}`, payload);
       router.push(`/problems/${problemId}`);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to update problem';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t('profile.updateFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -70,8 +72,8 @@ export default function EditProblemPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Edit Problem</h1>
-        <Link href="/admin" className="text-sm text-primary hover:underline">Back to Admin</Link>
+        <h1 className="text-2xl font-bold text-foreground">{t('admin.editProblem')}</h1>
+        <Link href="/admin" className="text-sm text-primary hover:underline">{t('admin.backToAdmin')}</Link>
       </div>
 
       <Card>
@@ -79,17 +81,17 @@ export default function EditProblemPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
 
-            <FormInput label="Title" value={form.title} onChange={handleChange('title')} required />
-            <FormInput label="Complexity" type="number" value={form.complexity} onChange={handleChange('complexity')} />
+            <FormInput label={t('admin.title')} value={form.title} onChange={handleChange('title')} required />
+            <FormInput label={t('admin.complexity')} type="number" value={form.complexity} onChange={handleChange('complexity')} />
             <FormTextarea
-              label="Description (HTML)"
+              label={t('admin.descriptionHtml')}
               value={form.description}
               onChange={handleChange('description')}
               rows={10}
             />
 
             <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? t('admin.saving') : t('common.saveChanges')}
             </Button>
           </form>
         </CardContent>

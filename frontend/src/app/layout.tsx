@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
+    <html lang="uk" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
       <body className="font-sans bg-background text-foreground min-h-screen flex flex-col">
         <Providers>
           <Nav />

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormInput, FormSelect, FormTextarea } from '@/components/ui/form-field';
@@ -12,6 +13,7 @@ import type { Language } from '@/types';
 
 export default function CreateContestPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     title: '',
     contest_type: 'classic',
@@ -52,7 +54,7 @@ export default function CreateContestPage() {
       const res = await api.post('/api/v1/admin/contests', payload);
       router.push(`/contests/${res.data.contest_id || res.data.contest?.contest_id}`);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to create contest';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t('admin.creating');
       setError(msg);
     } finally {
       setLoading(false);
@@ -62,8 +64,8 @@ export default function CreateContestPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Create Contest</h1>
-        <Link href="/admin" className="text-sm text-primary hover:underline">Back to Admin</Link>
+        <h1 className="text-2xl font-bold text-foreground">{t('admin.createContest')}</h1>
+        <Link href="/admin" className="text-sm text-primary hover:underline">{t('admin.backToAdmin')}</Link>
       </div>
 
       <Card>
@@ -71,23 +73,23 @@ export default function CreateContestPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
 
-            <FormInput label="Title" value={form.title} onChange={handleChange('title')} required />
+            <FormInput label={t('admin.contestTitle')} value={form.title} onChange={handleChange('title')} required />
 
             <FormSelect
-              label="Contest Type"
+              label={t('admin.contestType')}
               value={form.contest_type}
               onChange={handleChange('contest_type')}
               options={[
-                { value: 'classic', label: 'Classic' },
+                { value: 'classic', label: t('contestType.classic') },
                 { value: 'acm', label: 'ACM-ICPC' },
                 { value: 'ioi', label: 'IOI' },
-                { value: 'school', label: 'School' },
-                { value: 'practice', label: 'Practice' },
+                { value: 'school', label: t('contestType.school') },
+                { value: 'practice', label: t('contestType.practice') },
               ]}
             />
 
             <FormInput
-              label="Start Time"
+              label={t('admin.startTime')}
               type="datetime-local"
               value={form.start_time}
               onChange={handleChange('start_time')}
@@ -95,31 +97,31 @@ export default function CreateContestPage() {
             />
 
             <FormInput
-              label="Duration (seconds)"
+              label={t('admin.durationSeconds')}
               type="number"
               value={form.duration_time}
               onChange={handleChange('duration_time')}
             />
 
             <FormSelect
-              label="Visible"
+              label={t('admin.visible')}
               value={form.visible}
               onChange={handleChange('visible')}
               options={[
-                { value: '1', label: 'Yes' },
-                { value: '0', label: 'No' },
+                { value: '1', label: t('admin.yes') },
+                { value: '0', label: t('admin.no') },
               ]}
             />
 
             <FormTextarea
-              label="Description (HTML)"
+              label={t('admin.descriptionHtml')}
               value={form.description}
               onChange={handleChange('description')}
               rows={6}
             />
 
             <Button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Contest'}
+              {loading ? t('admin.creating') : t('admin.createContest')}
             </Button>
           </form>
         </CardContent>

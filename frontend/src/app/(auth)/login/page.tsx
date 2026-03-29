@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FormInput } from '@/components/ui/form-field';
@@ -12,6 +13,7 @@ import { Loader2, LogIn } from 'lucide-react';
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,7 +28,7 @@ export default function LoginPage() {
       router.push('/contests');
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error;
-      setError(typeof errData === 'string' ? errData : errData?.message || 'Login failed');
+      setError(typeof errData === 'string' ? errData : errData?.message || t('auth.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -35,7 +37,7 @@ export default function LoginPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sign In</CardTitle>
+        <CardTitle>{t('auth.signIn')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -43,7 +45,7 @@ export default function LoginPage() {
             <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>
           )}
           <FormInput
-            label="Email or Username"
+            label={t('auth.emailOrUsername')}
             type="text"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -51,7 +53,7 @@ export default function LoginPage() {
             autoFocus
           />
           <FormInput
-            label="Password"
+            label={t('auth.password')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -59,15 +61,15 @@ export default function LoginPage() {
           />
           <Button type="submit" disabled={loading} className="w-full gap-1.5">
             {loading ? (
-              <><Loader2 className="size-4 animate-spin" />Signing in...</>
+              <><Loader2 className="size-4 animate-spin" />{t('auth.signingIn')}</>
             ) : (
-              <><LogIn className="size-4" />Sign In</>
+              <><LogIn className="size-4" />{t('auth.signIn')}</>
             )}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            {t('auth.noAccount')}{' '}
             <Link href="/register" className="text-primary hover:underline">
-              Register
+              {t('auth.register')}
             </Link>
           </p>
         </form>

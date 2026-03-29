@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ClassicStandings } from '@/components/standings/classic-standings';
 import { AcmStandings } from '@/components/standings/acm-standings';
@@ -40,6 +41,7 @@ function StandingsTableSkeleton() {
 export default function ContestStandingsPage() {
   const params = useParams();
   const contestId = params.contestId as string;
+  const { t } = useTranslation();
 
   const { data: contestData } = useQuery({
     queryKey: ['contest', contestId],
@@ -66,10 +68,10 @@ export default function ContestStandingsPage() {
       ) : !data || !data.users || data.users.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <div className="text-4xl">📊</div>
-          <p className="text-muted-foreground text-lg">No standings data yet</p>
-          <p className="text-muted-foreground text-sm">Standings will appear here once participants submit solutions.</p>
+          <p className="text-muted-foreground text-lg">{t('standings.noStandings')}</p>
+          <p className="text-muted-foreground text-sm">{t('standings.noStandingsDesc')}</p>
           <Link href={`/contests/${contestId}/submit`} className="inline-block mt-2 text-sm text-primary hover:underline">
-            Submit a solution
+            {t('standings.submitSolution')}
           </Link>
         </div>
       ) : (

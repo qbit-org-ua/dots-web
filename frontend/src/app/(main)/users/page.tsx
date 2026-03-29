@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { formatDateTime } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,10 +19,10 @@ function UsersTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Nickname</TableHead>
-            <TableHead>Full Name</TableHead>
-            <TableHead>City</TableHead>
-            <TableHead>Last Login</TableHead>
+            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-24" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-24" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -42,6 +43,7 @@ function UsersTableSkeleton() {
 export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ['users', page, search],
@@ -61,10 +63,10 @@ export default function UsersPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Users</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('users.title')}</h1>
         <div className="w-full sm:w-64">
           <Input
-            placeholder="Search users..."
+            placeholder={t('users.searchPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -79,9 +81,9 @@ export default function UsersPage() {
       ) : users.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <Users className="size-12 mx-auto text-muted-foreground/50" />
-          <p className="text-muted-foreground text-lg">No users found</p>
+          <p className="text-muted-foreground text-lg">{t('users.noUsers')}</p>
           <p className="text-muted-foreground text-sm">
-            {search ? 'Try a different search term.' : 'No users are registered yet.'}
+            {search ? t('users.noUsersSearch') : t('users.noUsersEmpty')}
           </p>
         </div>
       ) : (
@@ -92,10 +94,10 @@ export default function UsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nickname</TableHead>
-                    <TableHead>Full Name</TableHead>
-                    <TableHead>City</TableHead>
-                    <TableHead>Last Login</TableHead>
+                    <TableHead>{t('users.tableNickname')}</TableHead>
+                    <TableHead>{t('users.tableFullName')}</TableHead>
+                    <TableHead>{t('users.tableCity')}</TableHead>
+                    <TableHead>{t('users.tableLastLogin')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormSelect } from '@/components/ui/form-field';
@@ -13,6 +14,7 @@ export default function AdminRejudgePage() {
   const [problemId, setProblemId] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
+  const { t } = useTranslation();
 
   const { data: contestsData } = useQuery({
     queryKey: ['contests-all'],
@@ -42,10 +44,10 @@ export default function AdminRejudgePage() {
         contest_id: Number(contestId),
         problem_id: problemId ? Number(problemId) : undefined,
       });
-      setResult('Rejudge started successfully.');
+      setResult(t('admin.rejudgeStarted'));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Rejudge failed';
-      setResult(`Error: ${msg}`);
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t('admin.rejudgeFailed');
+      setResult(`${t('common.error')}: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -53,13 +55,13 @@ export default function AdminRejudgePage() {
 
   return (
     <div className="space-y-6 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-foreground">Rejudge Solutions</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('admin.rejudgeSolutions')}</h1>
 
       <Card>
         <CardContent>
           <div className="space-y-4">
             <FormSelect
-              label="Contest"
+              label={t('admin.contest')}
               value={contestId}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                 setContestId(e.target.value);
@@ -69,17 +71,17 @@ export default function AdminRejudgePage() {
             />
             {contestId && (
               <FormSelect
-                label="Problem (optional - leave empty for all)"
+                label={t('admin.problemOptional')}
                 value={problemId}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setProblemId(e.target.value)}
                 options={problems.map((p) => ({ value: p.problem_id, label: `${p.short_name}. ${p.title}` }))}
               />
             )}
             <Button onClick={handleRejudge} disabled={loading || !contestId} variant="destructive">
-              {loading ? 'Starting...' : 'Start Rejudge'}
+              {loading ? t('admin.starting') : t('admin.startRejudge')}
             </Button>
             {result && (
-              <div className={`text-sm rounded-md p-3 ${result.startsWith('Error') ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-700 dark:text-green-300'}`}>
+              <div className={`text-sm rounded-md p-3 ${result.startsWith(t('common.error')) ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-700 dark:text-green-300'}`}>
                 {result}
               </div>
             )}

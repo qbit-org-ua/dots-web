@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormInput } from '@/components/ui/form-field';
@@ -12,6 +13,7 @@ import { FormInput } from '@/components/ui/form-field';
 export default function AdminChangePasswordPage() {
   const params = useParams();
   const userId = params.userId as string;
+  const { t } = useTranslation();
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,11 +37,11 @@ export default function AdminChangePasswordPage() {
     setSuccess('');
 
     if (newPassword.length < 4) {
-      setError('Password must be at least 4 characters.');
+      setError(t('profile.passwordTooShort'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('profile.passwordsDoNotMatch'));
       return;
     }
 
@@ -49,11 +51,11 @@ export default function AdminChangePasswordPage() {
         old_password: '',
         new_password: newPassword,
       });
-      setSuccess('Password changed successfully.');
+      setSuccess(t('profile.passwordChanged'));
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Failed to change password';
+      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || t('profile.passwordChangeFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -63,14 +65,14 @@ export default function AdminChangePasswordPage() {
   return (
     <div className="max-w-lg mx-auto space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Change Password</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('profile.changePassword')}</h1>
         <Link href={`/users/${userId}`} className="text-sm text-primary hover:underline">
-          Back to Profile
+          {t('profile.backToProfile')}
         </Link>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Changing password for <Link href={`/users/${userId}`} className="text-primary hover:underline font-medium">{nickname}</Link>
+        {t('admin.changingPasswordFor')} <Link href={`/users/${userId}`} className="text-primary hover:underline font-medium">{nickname}</Link>
       </p>
 
       <Card>
@@ -79,21 +81,21 @@ export default function AdminChangePasswordPage() {
             {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
             {success && <div className="bg-green-500/10 text-green-700 dark:text-green-300 text-sm rounded-md p-3">{success}</div>}
             <FormInput
-              label="New Password"
+              label={t('profile.newPassword')}
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
             />
             <FormInput
-              label="Confirm New Password"
+              label={t('profile.confirmNewPassword')}
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
             <Button type="submit" disabled={loading}>
-              {loading ? 'Changing...' : 'Change Password'}
+              {loading ? t('profile.changing') : t('profile.changePassword')}
             </Button>
           </form>
         </CardContent>

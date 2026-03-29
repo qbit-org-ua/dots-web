@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { formatDateTime } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,11 +21,11 @@ function SolutionsTableSkeleton() {
         <TableHeader>
           <TableRow>
             <TableHead>#</TableHead>
-            <TableHead>Problem</TableHead>
-            <TableHead>Language</TableHead>
-            <TableHead>Result</TableHead>
-            <TableHead className="text-right">Score</TableHead>
-            <TableHead>Time</TableHead>
+            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+            <TableHead className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -46,6 +47,7 @@ function SolutionsTableSkeleton() {
 
 export default function SolutionsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const problemId = searchParams.get('problem_id');
@@ -65,9 +67,9 @@ export default function SolutionsPage() {
     return (
       <div className="text-center py-16 space-y-3">
         <div className="text-4xl">🔒</div>
-        <p className="text-muted-foreground text-lg">Sign in required</p>
-        <p className="text-muted-foreground text-sm">Please sign in to view your solutions.</p>
-        <Link href="/login" className="inline-block mt-2 text-sm text-primary hover:underline">Sign In</Link>
+        <p className="text-muted-foreground text-lg">{t('auth.signInRequired')}</p>
+        <p className="text-muted-foreground text-sm">{t('auth.pleaseSignInSolutions')}</p>
+        <Link href="/login" className="inline-block mt-2 text-sm text-primary hover:underline">{t('auth.signIn')}</Link>
       </div>
     );
   }
@@ -79,21 +81,21 @@ export default function SolutionsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-foreground">My Solutions</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('solutions.title')}</h1>
 
       {isLoading ? (
         <SolutionsTableSkeleton />
       ) : solutions.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <FileCode className="size-12 mx-auto text-muted-foreground/50" />
-          <p className="text-muted-foreground text-lg">No solutions submitted yet</p>
+          <p className="text-muted-foreground text-lg">{t('solutions.noSolutions')}</p>
           <p className="text-muted-foreground text-sm">
             {problemId
-              ? 'You haven\'t submitted solutions for this problem yet.'
-              : 'Join a contest and submit your first solution to see it here.'}
+              ? t('solutions.noSolutionsProblem')
+              : t('solutions.noSolutionsGeneral')}
           </p>
           <Link href="/contests" className="inline-block mt-2 text-sm text-primary hover:underline">
-            Browse contests
+            {t('solutions.browseContests')}
           </Link>
         </div>
       ) : (
@@ -105,11 +107,11 @@ export default function SolutionsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>#</TableHead>
-                    <TableHead>Problem</TableHead>
-                    <TableHead>Language</TableHead>
-                    <TableHead>Result</TableHead>
-                    <TableHead className="text-right">Score</TableHead>
-                    <TableHead>Time</TableHead>
+                    <TableHead>{t('solutions.tableProblem')}</TableHead>
+                    <TableHead>{t('solutions.tableLanguage')}</TableHead>
+                    <TableHead>{t('solutions.tableResult')}</TableHead>
+                    <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
+                    <TableHead>{t('solutions.tableTime')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

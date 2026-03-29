@@ -2,10 +2,12 @@
 
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tooltip>
@@ -18,7 +20,7 @@ export function ThemeToggle() {
         <Moon className="size-4 block dark:hidden" />
       </TooltipTrigger>
       <TooltipContent>
-        Switch to {theme === 'dark' ? 'light' : 'dark'} mode
+        {t('common.switchTheme')} {theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
       </TooltipContent>
     </Tooltip>
   );

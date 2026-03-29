@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from '@/components/ui/pagination';
@@ -18,8 +19,8 @@ function ProblemsTableSkeleton() {
         <TableHeader>
           <TableRow>
             <TableHead className="w-20">#</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead className="text-right w-32">Complexity</TableHead>
+            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+            <TableHead className="text-right w-32"><Skeleton className="h-4 w-20 ml-auto" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -39,6 +40,7 @@ function ProblemsTableSkeleton() {
 export default function ProblemsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ['problems', page, search],
@@ -58,10 +60,10 @@ export default function ProblemsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Problem Archive</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('problems.title')}</h1>
         <div className="w-full sm:w-64">
           <Input
-            placeholder="Search problems..."
+            placeholder={t('problems.searchPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -76,9 +78,9 @@ export default function ProblemsPage() {
       ) : problems.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <BookOpen className="size-12 mx-auto text-muted-foreground/50" />
-          <p className="text-muted-foreground text-lg">No problems found</p>
+          <p className="text-muted-foreground text-lg">{t('problems.noProblems')}</p>
           <p className="text-muted-foreground text-sm">
-            {search ? 'Try a different search term.' : 'Problems will appear here once they are added to the archive.'}
+            {search ? t('problems.noProblemsSearch') : t('problems.noProblemsEmpty')}
           </p>
         </div>
       ) : (
@@ -88,8 +90,8 @@ export default function ProblemsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-20">#</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead className="text-right w-32">Complexity</TableHead>
+                  <TableHead>{t('problems.tableTitle')}</TableHead>
+                  <TableHead className="text-right w-32">{t('problems.tableComplexity')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

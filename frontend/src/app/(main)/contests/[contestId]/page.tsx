@@ -5,8 +5,8 @@ import { useParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { formatDateTime, formatDuration } from '@/lib/utils';
-import { CONTEST_TYPES, REG_STATUS_LABELS, REG_MODE_LABELS } from '@/lib/constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -21,13 +21,6 @@ const STATUS_BADGE_VARIANT: Record<string, 'default' | 'secondary' | 'destructiv
   GoingFrozen: 'outline',
   FinishedFrozen: 'secondary',
 };
-
-function getRegModeLabel(options: number): string {
-  if (options & 0x04) return REG_MODE_LABELS[0x04];
-  if (options & 0x02) return REG_MODE_LABELS[0x02];
-  if (options & 0x01) return REG_MODE_LABELS[0x01];
-  return 'вільна реєстрація';
-}
 
 function formatTimeRemaining(seconds: number): string {
   if (seconds <= 0) return '00 - 00:00:00';
@@ -59,6 +52,7 @@ export default function ContestDetailPage() {
   const params = useParams();
   const contestId = params.contestId as string;
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
 
   useEffect(() => {
@@ -96,8 +90,8 @@ export default function ContestDetailPage() {
     return (
       <div className="text-center py-16 space-y-3">
         <div className="text-4xl">🔍</div>
-        <p className="text-muted-foreground text-lg">Contest not found</p>
-        <p className="text-muted-foreground text-sm">This contest may have been removed or you may not have access.</p>
+        <p className="text-muted-foreground text-lg">{t('contests.notFound')}</p>
+        <p className="text-muted-foreground text-sm">{t('contests.notFoundDesc')}</p>
       </div>
     );
   }
@@ -108,9 +102,16 @@ export default function ContestDetailPage() {
   const remaining = endTime > 0 ? endTime - now : 0;
   const progress = durationSeconds > 0 ? Math.min(Math.max(elapsed / durationSeconds, 0), 1) * 100 : 0;
 
+  function getRegModeLabel(options: number): string {
+    if (options & 0x04) return t('regMode.internal');
+    if (options & 0x02) return t('regMode.confirm');
+    if (options & 0x01) return t('regMode.free');
+    return t('regMode.free');
+  }
+
   const regStatusLabel = regStatus === null || regStatus === undefined
-    ? 'не зареєстрований'
-    : (REG_STATUS_LABELS[regStatus] ?? 'не зареєстрований');
+    ? t('regStatus.0')
+    : (t('regStatus.' + regStatus));
 
   return (
     <div className="space-y-6">
@@ -125,16 +126,16 @@ export default function ContestDetailPage() {
               className="shadow-md"
             >
               {registerMutation.isPending ? (
-                <><Loader2 className="size-4 mr-2 animate-spin" />Registering...</>
+                <><Loader2 className="size-4 mr-2 animate-spin" />{t('contests.registering')}</>
               ) : (
-                <><UserPlus className="size-4 mr-2" />Register for Contest</>
+                <><UserPlus className="size-4 mr-2" />{t('contests.registerForContest')}</>
               )}
             </Button>
           ) : (
             <>
               <Badge variant="default" className="gap-1.5 py-1 px-3 text-sm">
                 <CheckCircle2 className="size-3.5" />
-                Registered
+                {t('contests.registered')}
               </Badge>
               <Button
                 onClick={() => leaveMutation.mutate()}
@@ -143,9 +144,9 @@ export default function ContestDetailPage() {
                 size="sm"
               >
                 {leaveMutation.isPending ? (
-                  <><Loader2 className="size-4 mr-1 animate-spin" />Leaving...</>
+                  <><Loader2 className="size-4 mr-1 animate-spin" />{t('contests.leaving')}</>
                 ) : (
-                  <><LogOutIcon className="size-3.5 mr-1" />Leave Contest</>
+                  <><LogOutIcon className="size-3.5 mr-1" />{t('contests.leaveContest')}</>
                 )}
               </Button>
             </>
@@ -161,8 +162,8 @@ export default function ContestDetailPage() {
               <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: contest.info }} />
             ) : (
               <div className="text-center py-8 space-y-2">
-                <p className="text-muted-foreground">No description has been provided for this contest.</p>
-                <p className="text-muted-foreground text-sm">Check the Problems tab for contest tasks.</p>
+                <p className="text-muted-foreground">{t('contests.noDescription')}</p>
+                <p className="text-muted-foreground text-sm">{t('contests.checkProblemsTab')}</p>
               </div>
             )}
           </CardContent>
@@ -171,41 +172,41 @@ export default function ContestDetailPage() {
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Details</CardTitle>
+              <CardTitle className="text-base">{t('contests.details')}</CardTitle>
             </CardHeader>
             <CardContent>
               <dl className="space-y-2.5 text-sm">
                 <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Type</dt>
-                  <dd><Badge variant="outline" className="font-normal">{CONTEST_TYPES[contest.contest_type] || contest.contest_type}</Badge></dd>
+                  <dt className="text-muted-foreground">{t('contests.type')}</dt>
+                  <dd><Badge variant="outline" className="font-normal">{t('contestType.' + contest.contest_type)}</Badge></dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Start</dt>
+                  <dt className="text-muted-foreground">{t('contests.start')}</dt>
                   <dd className="font-medium text-xs">{formatDateTime(contest.start_time)}</dd>
                 </div>
                 {endTime > 0 && (
                   <div className="flex items-center justify-between">
-                    <dt className="text-muted-foreground">End</dt>
+                    <dt className="text-muted-foreground">{t('contests.end')}</dt>
                     <dd className="font-medium text-xs">{formatDateTime(endTime)}</dd>
                   </div>
                 )}
                 {durationSeconds > 0 && (
                   <div className="flex items-center justify-between">
-                    <dt className="text-muted-foreground">Duration</dt>
+                    <dt className="text-muted-foreground">{t('contests.duration')}</dt>
                     <dd className="font-medium">{formatDuration(durationSeconds)}</dd>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Status</dt>
-                  <dd><Badge variant={STATUS_BADGE_VARIANT[status] || 'secondary'}>{status}</Badge></dd>
+                  <dt className="text-muted-foreground">{t('contests.status')}</dt>
+                  <dd><Badge variant={STATUS_BADGE_VARIANT[status] || 'secondary'}>{t('status.' + status)}</Badge></dd>
                 </div>
 
                 {/* Progress bar for elapsed/remaining */}
                 {elapsed > 0 && endTime > 0 && durationSeconds > 0 && (
                   <div className="pt-1 space-y-1.5">
                     <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Elapsed</span>
-                      <span>Remaining</span>
+                      <span>{t('contests.elapsed')}</span>
+                      <span>{t('contests.remaining')}</span>
                     </div>
                     <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                       <div
@@ -215,18 +216,18 @@ export default function ContestDetailPage() {
                     </div>
                     <div className="flex justify-between text-xs font-mono">
                       <span>{formatTimeRemaining(Math.min(elapsed, durationSeconds))}</span>
-                      <span>{remaining > 0 ? formatTimeRemaining(remaining) : 'Finished'}</span>
+                      <span>{remaining > 0 ? formatTimeRemaining(remaining) : t('contests.finished')}</span>
                     </div>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Registration</dt>
+                  <dt className="text-muted-foreground">{t('contests.registration')}</dt>
                   <dd className="font-medium text-xs">{getRegModeLabel(contest.options)}</dd>
                 </div>
                 {user && (
                   <div className="flex items-center justify-between">
-                    <dt className="text-muted-foreground">Your status</dt>
+                    <dt className="text-muted-foreground">{t('contests.yourStatus')}</dt>
                     <dd className="font-medium text-xs">{regStatusLabel}</dd>
                   </div>
                 )}

@@ -1,33 +1,33 @@
+'use client';
+
+import { useTranslation } from '@/lib/i18n';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function AboutPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-foreground mb-6">About DOTS</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">{t('about.title')}</h1>
       <Card>
         <CardContent>
           <div className="prose dark:prose-invert max-w-none">
-            <p>
-              <strong>DOTS</strong> (Distributed Olympiad Testing System) is an online competitive
-              programming judge and contest platform. It provides a comprehensive environment for
-              hosting programming contests, managing problems, and automatically testing submitted
-              solutions.
-            </p>
-            <h3>Features</h3>
+            <p dangerouslySetInnerHTML={{ __html: t('about.description') }} />
+            <h3>{t('about.featuresTitle')}</h3>
             <ul>
-              <li>Multiple contest formats: Classic, ACM-ICPC, IOI, and more</li>
-              <li>Automatic solution testing with support for multiple programming languages</li>
-              <li>Real-time standings and scoring</li>
-              <li>Problem archive for practice</li>
-              <li>User profiles and messaging system</li>
-              <li>Administrative tools for contest and problem management</li>
+              <li>{t('about.feature1')}</li>
+              <li>{t('about.feature2')}</li>
+              <li>{t('about.feature3')}</li>
+              <li>{t('about.feature4')}</li>
+              <li>{t('about.feature5')}</li>
+              <li>{t('about.feature6')}</li>
             </ul>
-            <h3>Contest Types</h3>
+            <h3>{t('about.contestTypesTitle')}</h3>
             <ul>
-              <li><strong>Classic</strong> - Traditional scoring with partial points per test</li>
-              <li><strong>ACM-ICPC</strong> - Binary scoring with time-based penalty</li>
-              <li><strong>IOI</strong> - Subtask-based scoring</li>
-              <li><strong>School</strong> - Simplified format for educational use</li>
+              <li dangerouslySetInnerHTML={{ __html: t('about.classicDesc') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('about.acmDesc') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('about.ioiDesc') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('about.schoolDesc') }} />
             </ul>
           </div>
         </CardContent>

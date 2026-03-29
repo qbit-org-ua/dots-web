@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { formatDateTime } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
@@ -17,6 +18,7 @@ export default function AdminSolutionsPage() {
   const [userId, setUserId] = useState('');
   const [contestId, setContestId] = useState('');
   const [problemId, setProblemId] = useState('');
+  const { t } = useTranslation();
 
   const params: Record<string, string | number> = { page, per_page: 25 };
   if (userId) params.user_id = userId;
@@ -38,7 +40,7 @@ export default function AdminSolutionsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-foreground">All Solutions</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('admin.allSolutions')}</h1>
 
       <div className="flex gap-4 flex-wrap">
         <div className="w-40">
@@ -47,7 +49,7 @@ export default function AdminSolutionsPage() {
             type="text"
             value={userId}
             onChange={(e) => { setUserId(e.target.value); setPage(1); }}
-            placeholder="Filter by user"
+            placeholder={t('admin.filterByUser')}
           />
         </div>
         <div className="w-40">
@@ -56,7 +58,7 @@ export default function AdminSolutionsPage() {
             type="text"
             value={contestId}
             onChange={(e) => { setContestId(e.target.value); setPage(1); }}
-            placeholder="Filter by contest"
+            placeholder={t('admin.filterByContest')}
           />
         </div>
         <div className="w-40">
@@ -65,7 +67,7 @@ export default function AdminSolutionsPage() {
             type="text"
             value={problemId}
             onChange={(e) => { setProblemId(e.target.value); setPage(1); }}
-            placeholder="Filter by problem"
+            placeholder={t('admin.filterByProblem')}
           />
         </div>
       </div>
@@ -73,21 +75,21 @@ export default function AdminSolutionsPage() {
       {isLoading ? (
         <Spinner />
       ) : solutions.length === 0 ? (
-        <p className="text-muted-foreground py-8 text-center">No solutions found.</p>
+        <p className="text-muted-foreground py-8 text-center">{t('admin.noSolutions')}</p>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">{total} solutions total</p>
+          <p className="text-sm text-muted-foreground">{total} {t('admin.solutionsTotal')}</p>
           <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>#</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Problem</TableHead>
-                  <TableHead>Contest</TableHead>
-                  <TableHead>Result</TableHead>
-                  <TableHead className="text-right">Score</TableHead>
-                  <TableHead>Time</TableHead>
+                  <TableHead>{t('admin.tableUser')}</TableHead>
+                  <TableHead>{t('solutions.tableProblem')}</TableHead>
+                  <TableHead>{t('admin.tableContest')}</TableHead>
+                  <TableHead>{t('solutions.tableResult')}</TableHead>
+                  <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
+                  <TableHead>{t('solutions.tableTime')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

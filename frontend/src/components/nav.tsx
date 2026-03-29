@@ -4,9 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { Menu, User, LogOut, Settings, Mail, Code2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { LocaleToggle } from '@/components/locale-toggle';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -22,15 +24,16 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 
-const navLinks = [
-  { href: '/contests', label: 'Contests' },
-];
-
 export function Nav() {
   const { user, isLoading, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useTranslation();
   const [sheetOpen, setSheetOpen] = React.useState(false);
+
+  const navLinks = [
+    { href: '/contests', label: t('nav.contests') },
+  ];
 
   return (
     <header className="bg-card border-b border-border shadow-sm">
@@ -60,6 +63,7 @@ export function Nav() {
           </div>
 
           <div className="hidden md:flex items-center gap-2">
+            <LocaleToggle />
             <ThemeToggle />
             {isLoading ? (
               <div className="w-20 h-5 bg-muted rounded animate-pulse" />
@@ -70,7 +74,7 @@ export function Nav() {
                   className="relative px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   <Mail className="size-4 inline-block mr-1" />
-                  Messages
+                  {t('nav.messages')}
                   {user.messages > 0 && (
                     <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
                       {user.messages}
@@ -82,7 +86,7 @@ export function Nav() {
                     href="/admin"
                     className="px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
-                    Admin
+                    {t('nav.admin')}
                   </Link>
                 )}
                 <DropdownMenu>
@@ -93,10 +97,10 @@ export function Nav() {
                   <DropdownMenuContent align="end" sideOffset={8}>
                     <DropdownMenuItem onClick={() => router.push('/profile')}>
                       <Settings className="size-4 mr-2" />
-                      Profile
+                      {t('nav.profile')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push('/solutions')}>
-                      My Solutions
+                      {t('nav.mySolutions')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -104,7 +108,7 @@ export function Nav() {
                       onClick={() => logout()}
                     >
                       <LogOut className="size-4 mr-2" />
-                      Logout
+                      {t('nav.logout')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -112,10 +116,10 @@ export function Nav() {
             ) : (
               <>
                 <Link href="/login" className="px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
-                  Login
+                  {t('nav.login')}
                 </Link>
                 <Link href="/register" className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90">
-                  Register
+                  {t('nav.register')}
                 </Link>
               </>
             )}
@@ -123,6 +127,7 @@ export function Nav() {
 
           {/* Mobile menu */}
           <div className="md:hidden flex items-center gap-2">
+            <LocaleToggle />
             <ThemeToggle />
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-9 w-9" aria-label="Open menu">
@@ -130,7 +135,7 @@ export function Nav() {
               </SheetTrigger>
               <SheetContent side="right">
                 <SheetHeader>
-                  <SheetTitle>Menu</SheetTitle>
+                  <SheetTitle>{t('nav.menu')}</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-1 p-4">
                   {navLinks.map((link) => (
@@ -152,33 +157,33 @@ export function Nav() {
                   {user ? (
                     <>
                       <Link href="/messages" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                        Messages {user.messages > 0 && `(${user.messages})`}
+                        {t('nav.messages')} {user.messages > 0 && `(${user.messages})`}
                       </Link>
                       <Link href="/profile" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                        Profile
+                        {t('nav.profile')}
                       </Link>
                       <Link href="/solutions" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                        My Solutions
+                        {t('nav.mySolutions')}
                       </Link>
                       {(user.access & 0x0100) !== 0 && (
                         <Link href="/admin" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                          Admin
+                          {t('nav.admin')}
                         </Link>
                       )}
                       <button
                         onClick={() => { setSheetOpen(false); logout(); }}
                         className="block w-full text-left px-3 py-2 text-sm text-destructive hover:bg-muted rounded-md"
                       >
-                        Logout
+                        {t('nav.logout')}
                       </button>
                     </>
                   ) : (
                     <>
                       <Link href="/login" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                        Login
+                        {t('nav.login')}
                       </Link>
                       <Link href="/register" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                        Register
+                        {t('nav.register')}
                       </Link>
                     </>
                   )}

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { formatDate } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,9 +15,7 @@ import { FileCode, Download, ArrowLeft } from 'lucide-react';
 import type { Problem } from '@/types';
 
 function cleanDescription(html: string): string {
-  // Remove #problem marker used by the PHP system
   let cleaned = html.replace(/^#problem\s*/i, '');
-  // Handle <attachment> tags from the PHP system - convert to download links
   cleaned = cleaned.replace(/<attachment[^>]*>(.*?)<\/attachment>/gi, '');
   return cleaned;
 }
@@ -39,6 +38,7 @@ function ProblemDetailSkeleton() {
 export default function ProblemDetailPage() {
   const params = useParams();
   const problemId = params.problemId as string;
+  const { t } = useTranslation();
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const contestId = searchParams.get('contest_id');
 
@@ -57,8 +57,8 @@ export default function ProblemDetailPage() {
     return (
       <div className="text-center py-16 space-y-3">
         <div className="text-4xl">🔍</div>
-        <p className="text-muted-foreground text-lg">Problem not found</p>
-        <p className="text-muted-foreground text-sm">This problem may have been removed or you may not have access.</p>
+        <p className="text-muted-foreground text-lg">{t('problems.notFound')}</p>
+        <p className="text-muted-foreground text-sm">{t('problems.notFoundDesc')}</p>
       </div>
     );
   }
@@ -71,9 +71,9 @@ export default function ProblemDetailPage() {
           <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
             <span>Problem #{problem.problem_id}</span>
             {problem.complexity > 0 && (
-              <Badge variant="outline">Difficulty: {problem.complexity}</Badge>
+              <Badge variant="outline">{t('problems.difficulty')}: {problem.complexity}</Badge>
             )}
-            <span>Posted: {formatDate(problem.posted_time)}</span>
+            <span>{t('problems.posted')}: {formatDate(problem.posted_time)}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -81,13 +81,13 @@ export default function ProblemDetailPage() {
             <Link href={`/contests/${contestId}/submit`}>
               <Button size="sm" className="gap-1.5">
                 <FileCode className="size-3.5" />
-                Submit Solution
+                {t('problems.submitSolution')}
               </Button>
             </Link>
           )}
           <Link href="/problems" className="text-sm text-primary hover:underline flex items-center gap-1">
             <ArrowLeft className="size-3.5" />
-            Back to Archive
+            {t('problems.backToArchive')}
           </Link>
         </div>
       </div>
@@ -101,9 +101,9 @@ export default function ProblemDetailPage() {
             />
           ) : (
             <div className="text-center py-8 space-y-2">
-              <p className="text-muted-foreground">No description available for this problem.</p>
+              <p className="text-muted-foreground">{t('problems.noDescription')}</p>
               {problem.attachment && (
-                <p className="text-muted-foreground text-sm">Check the attachment below for problem details.</p>
+                <p className="text-muted-foreground text-sm">{t('problems.checkAttachment')}</p>
               )}
             </div>
           )}
@@ -113,7 +113,7 @@ export default function ProblemDetailPage() {
       {problem.attachment && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Attachments</CardTitle>
+            <CardTitle className="text-base">{t('problems.attachments')}</CardTitle>
           </CardHeader>
           <CardContent>
             <a
@@ -122,7 +122,7 @@ export default function ProblemDetailPage() {
               download
             >
               <Download className="size-4" />
-              Download Attachment
+              {t('problems.downloadAttachment')}
             </a>
           </CardContent>
         </Card>

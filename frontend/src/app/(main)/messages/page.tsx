@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { formatDateTime } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,10 +20,10 @@ function MessageTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>From</TableHead>
-            <TableHead>Subject</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead><Skeleton className="h-4 w-12" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-12" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -42,6 +43,7 @@ function MessageTableSkeleton() {
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [tab, setTab] = useState<'inbox' | 'sent'>('inbox');
 
   const { data, isLoading } = useQuery({
@@ -57,9 +59,9 @@ export default function MessagesPage() {
     return (
       <div className="text-center py-16 space-y-3">
         <div className="text-4xl">🔒</div>
-        <p className="text-muted-foreground text-lg">Sign in required</p>
-        <p className="text-muted-foreground text-sm">Please sign in to view your messages.</p>
-        <Link href="/login" className="inline-block mt-2 text-sm text-primary hover:underline">Sign In</Link>
+        <p className="text-muted-foreground text-lg">{t('auth.signInRequired')}</p>
+        <p className="text-muted-foreground text-sm">{t('auth.pleaseSignInMessages')}</p>
+        <Link href="/login" className="inline-block mt-2 text-sm text-primary hover:underline">{t('auth.signIn')}</Link>
       </div>
     );
   }
@@ -69,11 +71,11 @@ export default function MessagesPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Messages</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('messages.title')}</h1>
         <Link href="/messages/compose">
           <Button size="sm" className="gap-1.5">
             <PenSquare className="size-3.5" />
-            Compose
+            {t('messages.compose')}
           </Button>
         </Link>
       </div>
@@ -87,7 +89,7 @@ export default function MessagesPage() {
               : 'text-muted-foreground border-transparent hover:text-foreground'
           }`}
         >
-          Inbox
+          {t('messages.inbox')}
         </button>
         <button
           onClick={() => setTab('sent')}
@@ -97,7 +99,7 @@ export default function MessagesPage() {
               : 'text-muted-foreground border-transparent hover:text-foreground'
           }`}
         >
-          Sent
+          {t('messages.sent')}
         </button>
       </div>
 
@@ -107,15 +109,15 @@ export default function MessagesPage() {
         <div className="text-center py-16 space-y-3">
           <Mail className="size-12 mx-auto text-muted-foreground/50" />
           <p className="text-muted-foreground text-lg">
-            {tab === 'inbox' ? 'Your inbox is empty' : 'No sent messages'}
+            {tab === 'inbox' ? t('messages.inboxEmpty') : t('messages.sentEmpty')}
           </p>
           <p className="text-muted-foreground text-sm">
-            {tab === 'inbox' ? 'Messages from other users will appear here.' : 'Messages you send will appear here.'}
+            {tab === 'inbox' ? t('messages.inboxEmptyDesc') : t('messages.sentEmptyDesc')}
           </p>
           <Link href="/messages/compose">
             <Button size="sm" variant="secondary" className="mt-2 gap-1.5">
               <PenSquare className="size-3.5" />
-              Compose your first message
+              {t('messages.composeFirst')}
             </Button>
           </Link>
         </div>
@@ -126,10 +128,10 @@ export default function MessagesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{tab === 'inbox' ? 'From' : 'To'}</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{tab === 'inbox' ? t('messages.from') : t('messages.to')}</TableHead>
+                  <TableHead>{t('messages.subject')}</TableHead>
+                  <TableHead>{t('messages.date')}</TableHead>
+                  <TableHead>{t('messages.status')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -140,12 +142,12 @@ export default function MessagesPage() {
                     </TableCell>
                     <TableCell>
                       <Link href={`/messages/${m.message_id}`} className="text-primary hover:underline">
-                        {m.message_subj || '(no subject)'}
+                        {m.message_subj || t('messages.noSubject')}
                       </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{formatDateTime(m.message_date)}</TableCell>
                     <TableCell>
-                      {!m.message_state && <Badge variant="outline">New</Badge>}
+                      {!m.message_state && <Badge variant="outline">{t('messages.new')}</Badge>}
                     </TableCell>
                   </TableRow>
                 ))}

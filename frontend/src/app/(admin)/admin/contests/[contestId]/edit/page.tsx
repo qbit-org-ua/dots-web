@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -14,6 +15,7 @@ export default function EditContestPage() {
   const params = useParams();
   const contestId = params.contestId as string;
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     title: '',
@@ -73,7 +75,7 @@ export default function EditContestPage() {
       await api.put(`/api/v1/admin/contests/${contestId}`, payload);
       router.push(`/contests/${contestId}`);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to update contest';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t('profile.updateFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -83,8 +85,8 @@ export default function EditContestPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Edit Contest</h1>
-        <Link href="/admin" className="text-sm text-primary hover:underline">Back to Admin</Link>
+        <h1 className="text-2xl font-bold text-foreground">{t('admin.editContest')}</h1>
+        <Link href="/admin" className="text-sm text-primary hover:underline">{t('admin.backToAdmin')}</Link>
       </div>
 
       <Card>
@@ -92,23 +94,23 @@ export default function EditContestPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
 
-            <FormInput label="Title" value={form.title} onChange={handleChange('title')} required />
+            <FormInput label={t('admin.contestTitle')} value={form.title} onChange={handleChange('title')} required />
 
             <FormSelect
-              label="Contest Type"
+              label={t('admin.contestType')}
               value={form.contest_type}
               onChange={handleChange('contest_type')}
               options={[
-                { value: 'classic', label: 'Classic' },
+                { value: 'classic', label: t('contestType.classic') },
                 { value: 'acm', label: 'ACM-ICPC' },
                 { value: 'ioi', label: 'IOI' },
-                { value: 'school', label: 'School' },
-                { value: 'practice', label: 'Practice' },
+                { value: 'school', label: t('contestType.school') },
+                { value: 'practice', label: t('contestType.practice') },
               ]}
             />
 
             <FormInput
-              label="Start Time"
+              label={t('admin.startTime')}
               type="datetime-local"
               value={form.start_time}
               onChange={handleChange('start_time')}
@@ -116,31 +118,31 @@ export default function EditContestPage() {
             />
 
             <FormInput
-              label="Duration (seconds)"
+              label={t('admin.durationSeconds')}
               type="number"
               value={form.duration_time}
               onChange={handleChange('duration_time')}
             />
 
             <FormSelect
-              label="Visible"
+              label={t('admin.visible')}
               value={form.visible}
               onChange={handleChange('visible')}
               options={[
-                { value: '1', label: 'Yes' },
-                { value: '0', label: 'No' },
+                { value: '1', label: t('admin.yes') },
+                { value: '0', label: t('admin.no') },
               ]}
             />
 
             <FormTextarea
-              label="Description (HTML)"
+              label={t('admin.descriptionHtml')}
               value={form.description}
               onChange={handleChange('description')}
               rows={6}
             />
 
             <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? t('admin.saving') : t('common.saveChanges')}
             </Button>
           </form>
         </CardContent>

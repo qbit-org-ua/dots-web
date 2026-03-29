@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,6 +20,7 @@ export default function ContestSubmitPage() {
   const contestId = params.contestId as string;
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [problemId, setProblemId] = useState('');
   const [languageId, setLanguageId] = useState('');
@@ -50,8 +52,8 @@ export default function ContestSubmitPage() {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">Please sign in to submit solutions.</p>
-        <Link href="/login" className="text-primary hover:underline">Sign In</Link>
+        <p className="text-muted-foreground mb-4">{t('auth.pleaseSignInSubmit')}</p>
+        <Link href="/login" className="text-primary hover:underline">{t('auth.signIn')}</Link>
       </div>
     );
   }
@@ -91,11 +93,11 @@ export default function ContestSubmitPage() {
     const hasFile = file !== null;
 
     if (!problemId || !languageId) {
-      setError('Please select a problem and language.');
+      setError(t('submit.selectProblemAndLanguage'));
       return;
     }
     if (!hasSource && !hasFile) {
-      setError('Please provide source code or upload a file.');
+      setError(t('submit.provideSource'));
       return;
     }
 
@@ -116,7 +118,7 @@ export default function ContestSubmitPage() {
       });
       router.push(`/contests/${contestId}/solutions`);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Submission failed';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t('submit.submissionFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -128,16 +130,14 @@ export default function ContestSubmitPage() {
       <Card>
         <CardContent>
           <div className="mb-4 rounded-md bg-yellow-500/10 border border-yellow-500/30 p-3 text-sm text-yellow-700 dark:text-yellow-300">
-            Зверніть увагу: після відправки, рішення змінити не можна. Але, якщо це дозволено правилами
-            конкурсу, можна завантажувати більше одного рішення для кожної задачі. Розмір рішення не
-            повинен перевищувати 16Кб.
+            {t('submit.notice')}
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>
             )}
             <FormSelect
-              label="Problem"
+              label={t('submit.problem')}
               value={problemId}
               onChange={(e) => setProblemId(e.target.value)}
               options={problems.map((p) => ({
@@ -146,7 +146,7 @@ export default function ContestSubmitPage() {
               }))}
             />
             <FormSelect
-              label="Language"
+              label={t('submit.language')}
               value={languageId}
               onChange={(e) => setLanguageId(e.target.value)}
               options={languages.map((l) => ({
@@ -155,15 +155,15 @@ export default function ContestSubmitPage() {
               }))}
             />
             <FormTextarea
-              label="Source Code"
+              label={t('submit.sourceCode')}
               value={source}
               onChange={handleSourceChange}
               rows={15}
               className="font-mono text-sm"
-              placeholder="Paste your source code here..."
+              placeholder={t('submit.pastePlaceholder')}
             />
             <div className="space-y-1">
-              <Label>or file:</Label>
+              <Label>{t('submit.orFile')}</Label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -171,14 +171,14 @@ export default function ContestSubmitPage() {
                 className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
               />
               {file && (
-                <p className="text-xs text-muted-foreground">Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)</p>
+                <p className="text-xs text-muted-foreground">{t('submit.selected')}: {file.name} ({(file.size / 1024).toFixed(1)} KB)</p>
               )}
             </div>
             <Button type="submit" disabled={loading} className="gap-1.5">
               {loading ? (
-                <><Loader2 className="size-4 animate-spin" />Submitting...</>
+                <><Loader2 className="size-4 animate-spin" />{t('submit.submitting')}</>
               ) : (
-                <><Send className="size-4" />Submit</>
+                <><Send className="size-4" />{t('submit.submit')}</>
               )}
             </Button>
           </form>

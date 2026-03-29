@@ -5,25 +5,12 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { formatDateTime } from '@/lib/utils';
-import { CONTEST_TYPES } from '@/lib/constants';
+import { useTranslation } from '@/lib/i18n';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from '@/components/ui/pagination';
 import type { Contest } from '@/types';
-
-function statusBadge(status: string) {
-  switch (status) {
-    case 'going':
-      return <Badge className="bg-green-600 text-white border-transparent">Going</Badge>;
-    case 'finished':
-      return <Badge variant="secondary">Finished</Badge>;
-    case 'wait':
-      return <Badge className="bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30">Waiting</Badge>;
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
-  }
-}
 
 function ContestTableSkeleton() {
   return (
@@ -31,11 +18,11 @@ function ContestTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Start Time</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Participants</TableHead>
+            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-12" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-24" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+            <TableHead className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -56,6 +43,7 @@ function ContestTableSkeleton() {
 
 export default function ContestsPage() {
   const [page, setPage] = useState(1);
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ['contests', page],
@@ -70,17 +58,30 @@ export default function ContestsPage() {
   const perPage = data?.per_page ?? 20;
   const totalPages = Math.ceil(total / perPage);
 
+  function statusBadge(status: string) {
+    switch (status) {
+      case 'going':
+        return <Badge className="bg-green-600 text-white border-transparent">{t('status.Going')}</Badge>;
+      case 'finished':
+        return <Badge variant="secondary">{t('status.Finished')}</Badge>;
+      case 'wait':
+        return <Badge className="bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30">{t('status.Wait')}</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-foreground">Contests</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('contests.title')}</h1>
 
       {isLoading ? (
         <ContestTableSkeleton />
       ) : contests.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <div className="text-4xl">🏆</div>
-          <p className="text-muted-foreground text-lg">No contests found</p>
-          <p className="text-muted-foreground text-sm">Check back later for upcoming contests.</p>
+          <p className="text-muted-foreground text-lg">{t('contests.noContests')}</p>
+          <p className="text-muted-foreground text-sm">{t('contests.checkBackLater')}</p>
         </div>
       ) : (
         <>
@@ -90,11 +91,11 @@ export default function ContestsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Start Time</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Participants</TableHead>
+                    <TableHead>{t('contests.tableTitle')}</TableHead>
+                    <TableHead>{t('contests.tableType')}</TableHead>
+                    <TableHead>{t('contests.tableStartTime')}</TableHead>
+                    <TableHead>{t('contests.tableStatus')}</TableHead>
+                    <TableHead className="text-right">{t('contests.tableParticipants')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -107,7 +108,7 @@ export default function ContestsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal">
-                          {CONTEST_TYPES[c.contest_type] || c.contest_type}
+                          {t('contestType.' + c.contest_type)}
                         </Badge>
                       </TableCell>
                       <TableCell>{formatDateTime(c.start_time)}</TableCell>

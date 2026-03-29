@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -18,6 +19,7 @@ import type { Group } from '@/types';
 
 export default function AdminGroupsPage() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [editGroup, setEditGroup] = useState<Group | null>(null);
   const [name, setName] = useState('');
@@ -76,8 +78,8 @@ export default function AdminGroupsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Groups</h1>
-        <Button onClick={openCreate} size="sm">Create Group</Button>
+        <h1 className="text-2xl font-bold text-foreground">{t('admin.groups')}</h1>
+        <Button onClick={openCreate} size="sm">{t('admin.createGroup')}</Button>
       </div>
 
       {isLoading ? (
@@ -87,10 +89,10 @@ export default function AdminGroupsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('admin.tableId')}</TableHead>
+                <TableHead>{t('admin.tableName')}</TableHead>
+                <TableHead>{t('admin.tableDescription')}</TableHead>
+                <TableHead className="text-right">{t('admin.tableActions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -101,15 +103,15 @@ export default function AdminGroupsPage() {
                   <TableCell className="text-muted-foreground">{g.group_description}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => openEdit(g)}>Edit</Button>
+                      <Button size="sm" variant="ghost" onClick={() => openEdit(g)}>{t('admin.edit')}</Button>
                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={() => {
-                          if (confirm('Delete this group?')) deleteMutation.mutate(g.group_id);
+                          if (confirm(t('admin.deleteGroup'))) deleteMutation.mutate(g.group_id);
                         }}
                       >
-                        Delete
+                        {t('admin.delete')}
                       </Button>
                     </div>
                   </TableCell>
@@ -123,7 +125,7 @@ export default function AdminGroupsPage() {
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editGroup ? 'Edit Group' : 'Create Group'}</DialogTitle>
+            <DialogTitle>{editGroup ? t('admin.editGroup') : t('admin.createGroup')}</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
@@ -132,13 +134,13 @@ export default function AdminGroupsPage() {
             }}
             className="space-y-4"
           >
-            <FormInput label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-            <FormInput label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+            <FormInput label={t('admin.name')} value={name} onChange={(e) => setName(e.target.value)} required />
+            <FormInput label={t('admin.description')} value={description} onChange={(e) => setDescription(e.target.value)} />
             <DialogFooter>
               <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Saving...' : 'Save'}
+                {saveMutation.isPending ? t('admin.saving') : t('common.save')}
               </Button>
-              <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>{t('common.cancel')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

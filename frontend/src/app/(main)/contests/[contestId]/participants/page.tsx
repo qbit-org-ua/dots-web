@@ -4,18 +4,12 @@ import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Users } from 'lucide-react';
 import type { ContestParticipant } from '@/types';
-
-const REG_STATUS_MAP: Record<number, string> = {
-  0: 'Not registered',
-  1: 'Confirming',
-  2: 'Failed',
-  3: 'OK',
-};
 
 function ParticipantsTableSkeleton() {
   return (
@@ -23,10 +17,10 @@ function ParticipantsTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-20">ID</TableHead>
-            <TableHead>Login - Full Name</TableHead>
-            <TableHead>Institution</TableHead>
-            <TableHead className="w-40">Registration Status</TableHead>
+            <TableHead className="w-20"><Skeleton className="h-4 w-8" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-32" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-24" /></TableHead>
+            <TableHead className="w-40"><Skeleton className="h-4 w-28" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -48,6 +42,7 @@ export default function ContestParticipantsPage() {
   const params = useParams();
   const contestId = params.contestId as string;
   const [search, setSearch] = useState('');
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ['contest-users', contestId],
@@ -74,7 +69,7 @@ export default function ContestParticipantsPage() {
       <div>
         <Input
           type="text"
-          placeholder="Search by nickname or name..."
+          placeholder={t('participants.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md"
@@ -87,12 +82,12 @@ export default function ContestParticipantsPage() {
         <div className="text-center py-16 space-y-3">
           <Users className="size-12 mx-auto text-muted-foreground/50" />
           <p className="text-muted-foreground text-lg">
-            {users.length === 0 ? 'No participants yet' : 'No matching participants'}
+            {users.length === 0 ? t('participants.noParticipants') : t('participants.noMatching')}
           </p>
           <p className="text-muted-foreground text-sm">
             {users.length === 0
-              ? 'Participants will appear here once they register for this contest.'
-              : 'Try a different search term.'}
+              ? t('participants.noParticipantsDesc')
+              : t('participants.noMatchingDesc')}
           </p>
         </div>
       ) : (
@@ -102,10 +97,10 @@ export default function ContestParticipantsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-20">ID</TableHead>
-                  <TableHead>Login - Full Name</TableHead>
-                  <TableHead>Institution</TableHead>
-                  <TableHead className="w-40">Registration Status</TableHead>
+                  <TableHead className="w-20">{t('participants.tableId')}</TableHead>
+                  <TableHead>{t('participants.tableLoginName')}</TableHead>
+                  <TableHead>{t('participants.tableInstitution')}</TableHead>
+                  <TableHead className="w-40">{t('participants.tableRegStatus')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -129,7 +124,7 @@ export default function ContestParticipantsPage() {
                             : 'text-muted-foreground'
                         }
                       >
-                        {REG_STATUS_MAP[u.reg_status] ?? `Unknown (${u.reg_status})`}
+                        {t('regStatusShort.' + u.reg_status)}
                       </span>
                     </TableCell>
                   </TableRow>

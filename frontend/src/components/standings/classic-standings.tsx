@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { StandingsData, ProblemScore } from '@/types';
 
@@ -20,19 +21,21 @@ function RankCell({ place }: { place: number }) {
 }
 
 export function ClassicStandings({ data }: { data: StandingsData }) {
+  const { t } = useTranslation();
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead>
           <tr className="bg-muted border-b border-border">
-            <th className="px-3 py-2 text-left font-medium text-muted-foreground w-12">#</th>
-            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Participant</th>
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground w-12">{t('standings.rank')}</th>
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground">{t('standings.participant')}</th>
             {data.problems.map((p) => (
               <th key={p.problem_id} className="px-3 py-2 text-center font-medium text-muted-foreground min-w-[60px]" title={p.title}>
                 {p.short_name}
               </th>
             ))}
-            <th className="px-3 py-2 text-center font-medium text-muted-foreground">Total</th>
+            <th className="px-3 py-2 text-center font-medium text-muted-foreground">{t('standings.total')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -61,7 +64,7 @@ export function ClassicStandings({ data }: { data: StandingsData }) {
                       </TooltipTrigger>
                       {score > 0 && (
                         <TooltipContent>
-                          Score: {ps.score} / {maxScore}
+                          {t('standings.score')}: {ps.score} / {maxScore}
                         </TooltipContent>
                       )}
                     </Tooltip>
@@ -76,7 +79,7 @@ export function ClassicStandings({ data }: { data: StandingsData }) {
           <tfoot>
             <tr className="bg-muted/70 border-t-2 border-border text-xs font-medium text-muted-foreground">
               <td className="px-3 py-2" colSpan={2}>
-                <span className="font-semibold">Tried / Solved</span>
+                <span className="font-semibold">{t('standings.triedSolved')}</span>
               </td>
               {data.summary.map((s, idx) => (
                 <td key={idx} className="px-3 py-2 text-center">

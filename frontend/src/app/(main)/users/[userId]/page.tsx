@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { formatDate, formatDateTime } from '@/lib/utils';
 import { ACCESS } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -52,6 +53,7 @@ export default function UserProfilePage() {
   const params = useParams();
   const userId = params.userId as string;
   const { user: currentUser } = useAuth();
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ['user', userId],
@@ -68,8 +70,8 @@ export default function UserProfilePage() {
     return (
       <div className="text-center py-16 space-y-3">
         <div className="text-4xl">👤</div>
-        <p className="text-muted-foreground text-lg">User not found</p>
-        <p className="text-muted-foreground text-sm">This user profile may have been removed.</p>
+        <p className="text-muted-foreground text-lg">{t('users.notFound')}</p>
+        <p className="text-muted-foreground text-sm">{t('users.notFoundDesc')}</p>
       </div>
     );
   }
@@ -83,7 +85,7 @@ export default function UserProfilePage() {
         <h1 className="text-2xl font-bold text-foreground">User #{user.user_id}</h1>
         <Link href="/users" className="text-sm text-primary hover:underline flex items-center gap-1">
           <ArrowLeft className="size-3.5" />
-          Back to Users
+          {t('users.backToUsers')}
         </Link>
       </div>
 
@@ -113,24 +115,24 @@ export default function UserProfilePage() {
         <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Profile Information</CardTitle>
+              <CardTitle className="text-base">{t('users.profileInfo')}</CardTitle>
             </CardHeader>
             <CardContent>
               <dl className="text-sm">
-                <InfoRow label="Nickname" value={user.nickname} icon={<User className="size-3.5" />} />
-                <InfoRow label="Full Name" value={user.fio} icon={<User className="size-3.5" />} />
-                <InfoRow label="Email" value={user.email} icon={<Mail className="size-3.5" />} />
-                <InfoRow label="Region" value={user.o_region || user.u_region} icon={<MapPin className="size-3.5" />} />
-                <InfoRow label="District" value={user.o_district} icon={<MapPin className="size-3.5" />} />
-                <InfoRow label="Institution" value={user.o_full_name || user.o_short_name || user.u_institution_name} icon={<Building className="size-3.5" />} />
-                <InfoRow label="Grade" value={user.o_grade} icon={<GraduationCap className="size-3.5" />} />
-                <InfoRow label="Specialty" value={user.u_specialty} icon={<BookOpen className="size-3.5" />} />
-                <InfoRow label="Course" value={user.u_kurs} icon={<GraduationCap className="size-3.5" />} />
-                <InfoRow label="City" value={user.city_name} icon={<MapPin className="size-3.5" />} />
-                <InfoRow label="Country" value={user.country_name} icon={<Globe className="size-3.5" />} />
-                <InfoRow label="Job" value={user.job} icon={<Briefcase className="size-3.5" />} />
-                <InfoRow label="Registered" value={user.created ? formatDate(user.created) : '-'} icon={<Calendar className="size-3.5" />} />
-                <InfoRow label="Last Login" value={user.lastlogin ? formatDateTime(user.lastlogin) : '-'} icon={<Clock className="size-3.5" />} />
+                <InfoRow label={t('users.nickname')} value={user.nickname} icon={<User className="size-3.5" />} />
+                <InfoRow label={t('users.fullName')} value={user.fio} icon={<User className="size-3.5" />} />
+                <InfoRow label={t('users.email')} value={user.email} icon={<Mail className="size-3.5" />} />
+                <InfoRow label={t('users.region')} value={user.o_region || user.u_region} icon={<MapPin className="size-3.5" />} />
+                <InfoRow label={t('users.district')} value={user.o_district} icon={<MapPin className="size-3.5" />} />
+                <InfoRow label={t('users.institution')} value={user.o_full_name || user.o_short_name || user.u_institution_name} icon={<Building className="size-3.5" />} />
+                <InfoRow label={t('users.grade')} value={user.o_grade} icon={<GraduationCap className="size-3.5" />} />
+                <InfoRow label={t('users.specialty')} value={user.u_specialty} icon={<BookOpen className="size-3.5" />} />
+                <InfoRow label={t('users.course')} value={user.u_kurs} icon={<GraduationCap className="size-3.5" />} />
+                <InfoRow label={t('users.city')} value={user.city_name} icon={<MapPin className="size-3.5" />} />
+                <InfoRow label={t('users.country')} value={user.country_name} icon={<Globe className="size-3.5" />} />
+                <InfoRow label={t('users.job')} value={user.job} icon={<Briefcase className="size-3.5" />} />
+                <InfoRow label={t('users.registered')} value={user.created ? formatDate(user.created) : '-'} icon={<Calendar className="size-3.5" />} />
+                <InfoRow label={t('users.lastLogin')} value={user.lastlogin ? formatDateTime(user.lastlogin) : '-'} icon={<Clock className="size-3.5" />} />
               </dl>
             </CardContent>
           </Card>
@@ -138,7 +140,7 @@ export default function UserProfilePage() {
           {user.u_certificate && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Certificate / Consent</CardTitle>
+                <CardTitle className="text-base">{t('users.certificate')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-sm prose dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: user.u_certificate }} />
@@ -149,7 +151,7 @@ export default function UserProfilePage() {
           {user.o_cert && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Olympiad Info</CardTitle>
+                <CardTitle className="text-base">{t('users.olympiadInfo')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-sm prose dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: user.o_cert }} />
@@ -160,7 +162,7 @@ export default function UserProfilePage() {
           {user.u_near && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Additional Info</CardTitle>
+                <CardTitle className="text-base">{t('users.additionalInfo')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-sm prose dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: user.u_near }} />
@@ -171,13 +173,13 @@ export default function UserProfilePage() {
           {(isAdmin || isOwnProfile) && (
             <div className="flex flex-wrap gap-4 text-sm">
               <Link href={isOwnProfile ? '/profile' : `/admin/users/${user.user_id}/edit`} className="text-primary hover:underline">
-                Edit profile
+                {t('users.editProfile')}
               </Link>
               <Link href={isOwnProfile ? '/profile/password' : `/admin/users/${user.user_id}/password`} className="text-primary hover:underline">
-                Change password
+                {t('users.changePassword')}
               </Link>
               <Link href={`/solutions?user_id=${user.user_id}`} className="text-primary hover:underline">
-                All solutions by this user
+                {t('users.allSolutions')}
               </Link>
             </div>
           )}

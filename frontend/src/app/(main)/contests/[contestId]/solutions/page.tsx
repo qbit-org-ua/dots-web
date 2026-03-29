@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { formatDateTime } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,12 +21,12 @@ function SolutionsTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Problem</TableHead>
-            <TableHead>Solution</TableHead>
-            <TableHead>Result</TableHead>
-            <TableHead className="text-right">Score</TableHead>
-            <TableHead>Posted</TableHead>
+            <TableHead><Skeleton className="h-4 w-8" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+            <TableHead className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-24" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -49,6 +50,7 @@ export default function ContestSolutionsPage() {
   const params = useParams();
   const contestId = params.contestId as string;
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ['contest-solutions', contestId],
@@ -65,9 +67,9 @@ export default function ContestSolutionsPage() {
     return (
       <div className="text-center py-16 space-y-3">
         <div className="text-4xl">🔒</div>
-        <p className="text-muted-foreground text-lg">Sign in required</p>
-        <p className="text-muted-foreground text-sm">Please sign in to view your contest solutions.</p>
-        <Link href="/login" className="inline-block mt-2 text-sm text-primary hover:underline">Sign In</Link>
+        <p className="text-muted-foreground text-lg">{t('auth.signInRequired')}</p>
+        <p className="text-muted-foreground text-sm">{t('auth.pleaseSignInSolutions')}</p>
+        <Link href="/login" className="inline-block mt-2 text-sm text-primary hover:underline">{t('auth.signIn')}</Link>
       </div>
     );
   }
@@ -79,12 +81,12 @@ export default function ContestSolutionsPage() {
       ) : solutions.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <FileCode className="size-12 mx-auto text-muted-foreground/50" />
-          <p className="text-muted-foreground text-lg">No solutions submitted yet</p>
-          <p className="text-muted-foreground text-sm">Submit your first solution to see results here.</p>
+          <p className="text-muted-foreground text-lg">{t('solutions.noSolutions')}</p>
+          <p className="text-muted-foreground text-sm">{t('solutions.submitFirst')}</p>
           <Link href={`/contests/${contestId}/submit`}>
             <Button size="sm" className="mt-2 gap-1.5">
               <FileCode className="size-3.5" />
-              Submit a solution
+              {t('solutions.submitSolution')}
             </Button>
           </Link>
         </div>
@@ -95,12 +97,12 @@ export default function ContestSolutionsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Problem</TableHead>
-                  <TableHead>Solution</TableHead>
-                  <TableHead>Result</TableHead>
-                  <TableHead className="text-right">Score</TableHead>
-                  <TableHead>Posted</TableHead>
+                  <TableHead>{t('solutions.tableId')}</TableHead>
+                  <TableHead>{t('solutions.tableProblem')}</TableHead>
+                  <TableHead>{t('solutions.tableSolution')}</TableHead>
+                  <TableHead>{t('solutions.tableResult')}</TableHead>
+                  <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
+                  <TableHead>{t('solutions.tablePosted')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

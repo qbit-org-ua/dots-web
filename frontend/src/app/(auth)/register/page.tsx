@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FormInput } from '@/components/ui/form-field';
@@ -10,6 +11,7 @@ import { Loader2, UserPlus } from 'lucide-react';
 
 export default function RegisterPage() {
   const { register } = useAuth();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
@@ -24,7 +26,7 @@ export default function RegisterPage() {
       await register(email, nickname);
       setSuccess(true);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Registration failed';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t('auth.registrationFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -35,16 +37,16 @@ export default function RegisterPage() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Registration Successful</CardTitle>
+          <CardTitle>{t('auth.registrationSuccessful')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center space-y-4">
-            <div className="text-green-600 dark:text-green-400 text-lg font-medium">Account created!</div>
+            <div className="text-green-600 dark:text-green-400 text-lg font-medium">{t('auth.accountCreated')}</div>
             <p className="text-muted-foreground">
-              Please check your email for your password and activation link.
+              {t('auth.checkEmail')}
             </p>
             <Link href="/login" className="text-primary hover:underline text-sm">
-              Go to Login
+              {t('auth.goToLogin')}
             </Link>
           </div>
         </CardContent>
@@ -55,7 +57,7 @@ export default function RegisterPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Register</CardTitle>
+        <CardTitle>{t('auth.register')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,7 +65,7 @@ export default function RegisterPage() {
             <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>
           )}
           <FormInput
-            label="Email"
+            label={t('auth.email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -71,7 +73,7 @@ export default function RegisterPage() {
             autoFocus
           />
           <FormInput
-            label="Nickname"
+            label={t('auth.nickname')}
             type="text"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
@@ -79,15 +81,15 @@ export default function RegisterPage() {
           />
           <Button type="submit" disabled={loading} className="w-full gap-1.5">
             {loading ? (
-              <><Loader2 className="size-4 animate-spin" />Registering...</>
+              <><Loader2 className="size-4 animate-spin" />{t('auth.registering')}</>
             ) : (
-              <><UserPlus className="size-4" />Register</>
+              <><UserPlus className="size-4" />{t('auth.register')}</>
             )}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{' '}
+            {t('auth.alreadyHaveAccount')}{' '}
             <Link href="/login" className="text-primary hover:underline">
-              Sign In
+              {t('auth.signIn')}
             </Link>
           </p>
         </form>

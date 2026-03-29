@@ -1,27 +1,3 @@
-export const CONTEST_TYPES: Record<string, string> = {
-  classic: 'Classic',
-  acm: 'ACM',
-  school: 'School',
-  ioi: 'IOI',
-  practice: 'Practice',
-  otbor: 'Підготовка до олімпіад',
-  olympic: 'Олімпіада',
-  cert: 'Сертифікація',
-};
-
-export const REG_STATUS_LABELS: Record<number, string> = {
-  0: 'не зареєстрований',
-  1: 'очікує підтвердження',
-  2: 'відмовлено',
-  3: 'зареєстрований',
-};
-
-export const REG_MODE_LABELS: Record<number, string> = {
-  0x01: 'вільна реєстрація',
-  0x02: 'з підтвердженням',
-  0x04: 'внутрішній',
-};
-
 // Must match PHP common.php TEST_RESULT_* constants (bitmask values)
 export const VERDICT_CODES: Record<number, string> = {
   0x0000: 'OK',   // TEST_RESULT_OK
@@ -34,20 +10,6 @@ export const VERDICT_CODES: Record<number, string> = {
   0x0040: 'RE',   // TEST_RESULT_RE
   0x0080: 'FF',   // TEST_RESULT_FF
   0x0100: 'ZR',   // TEST_RESULT_ZR
-};
-
-export const VERDICT_LABELS: Record<string, string> = {
-  OK: 'Accepted',
-  PO: 'Partial',
-  CE: 'Compilation Error',
-  WA: 'Wrong Answer',
-  PE: 'Presentation Error',
-  TL: 'Time Limit',
-  ML: 'Memory Limit',
-  RE: 'Runtime Error',
-  FF: 'Forbidden Function',
-  ZR: 'Zero Result',
-  NT: 'Not Tested',
 };
 
 // For compound results (bitmask OR of multiple codes), decode the primary verdict
@@ -101,12 +63,3 @@ export const ACCESS = {
   TEACHER_USER: 0xfffe,
   ADMIN_USER: 0xffff,
 } as const;
-
-export const CONTEST_STATUS: Record<string, string> = {
-  Going: 'Going',
-  Finished: 'Finished',
-  Wait: 'Waiting',
-  GoingFrozen: 'Going (Frozen)',
-  FinishedFrozen: 'Finished (Frozen)',
-};
-

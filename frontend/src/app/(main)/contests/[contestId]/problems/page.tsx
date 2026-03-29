@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VerdictBadge } from '@/components/verdict-badge';
@@ -17,12 +18,12 @@ function ProblemsTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-20">ID</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead className="text-center w-28">Complexity</TableHead>
-            <TableHead className="text-center w-32">Result</TableHead>
-            <TableHead className="text-right w-28">Score</TableHead>
-            <TableHead className="text-right w-28">Max Score</TableHead>
+            <TableHead className="w-20"><Skeleton className="h-4 w-8" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+            <TableHead className="text-center w-28"><Skeleton className="h-4 w-20 mx-auto" /></TableHead>
+            <TableHead className="text-center w-32"><Skeleton className="h-4 w-16 mx-auto" /></TableHead>
+            <TableHead className="text-right w-28"><Skeleton className="h-4 w-12 ml-auto" /></TableHead>
+            <TableHead className="text-right w-28"><Skeleton className="h-4 w-16 ml-auto" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -45,6 +46,7 @@ function ProblemsTableSkeleton() {
 export default function ContestProblemsPage() {
   const params = useParams();
   const contestId = params.contestId as string;
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ['contest-problems', contestId],
@@ -63,8 +65,8 @@ export default function ContestProblemsPage() {
       ) : problems.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <BookOpen className="size-12 mx-auto text-muted-foreground/50" />
-          <p className="text-muted-foreground text-lg">No problems available</p>
-          <p className="text-muted-foreground text-sm">Problems will appear here once the contest begins or they are published.</p>
+          <p className="text-muted-foreground text-lg">{t('problems.noProblems')}</p>
+          <p className="text-muted-foreground text-sm">{t('problems.noProblemsCont')}</p>
         </div>
       ) : (
         <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
@@ -73,12 +75,12 @@ export default function ContestProblemsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-20">ID</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead className="text-center w-28">Complexity</TableHead>
-                  <TableHead className="text-center w-32">Result</TableHead>
-                  <TableHead className="text-right w-28">Score</TableHead>
-                  <TableHead className="text-right w-28">Max Score</TableHead>
+                  <TableHead className="w-20">{t('problems.tableId')}</TableHead>
+                  <TableHead>{t('problems.tableTitle')}</TableHead>
+                  <TableHead className="text-center w-28">{t('problems.tableComplexity')}</TableHead>
+                  <TableHead className="text-center w-32">{t('problems.tableResult')}</TableHead>
+                  <TableHead className="text-right w-28">{t('problems.tableScore')}</TableHead>
+                  <TableHead className="text-right w-28">{t('problems.tableMaxScore')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

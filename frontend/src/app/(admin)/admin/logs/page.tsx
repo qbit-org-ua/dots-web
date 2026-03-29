@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { formatDateTime } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -20,6 +21,7 @@ interface LogEntry {
 
 export default function AdminLogsPage() {
   const [page, setPage] = useState(1);
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-logs', page],
@@ -35,12 +37,12 @@ export default function AdminLogsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-foreground">System Logs</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('admin.systemLogs')}</h1>
 
       {isLoading ? (
         <Spinner />
       ) : logs.length === 0 ? (
-        <p className="text-muted-foreground py-8 text-center">No logs found.</p>
+        <p className="text-muted-foreground py-8 text-center">{t('admin.noLogs')}</p>
       ) : (
         <>
           <Card>
