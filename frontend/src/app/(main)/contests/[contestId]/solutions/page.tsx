@@ -60,12 +60,12 @@ export default function ContestSolutionsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>#</TableHead>
+                <TableHead>ID</TableHead>
                 <TableHead>Problem</TableHead>
-                <TableHead>Language</TableHead>
+                <TableHead>Solution</TableHead>
                 <TableHead>Result</TableHead>
                 <TableHead className="text-right">Score</TableHead>
-                <TableHead>Time</TableHead>
+                <TableHead>Posted</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -76,12 +76,17 @@ export default function ContestSolutionsPage() {
                       {s.solution_id}
                     </Link>
                   </TableCell>
-                  <TableCell>{s.short_name || s.problem_title || s.problem_id}</TableCell>
-                  <TableCell>{s.language_name || s.language_id}</TableCell>
                   <TableCell>
-                    <VerdictBadge result={s.result} />
+                    {s.short_name ? `${s.short_name}. ` : ''}
+                    {s.problem_title || `Problem #${s.problem_id}`}
                   </TableCell>
-                  <TableCell className="text-right">{s.score}</TableCell>
+                  <TableCell className="text-gray-600 text-xs font-mono">
+                    {s.filename || '-'}
+                  </TableCell>
+                  <TableCell>
+                    <VerdictBadge result={s.test_result} />
+                  </TableCell>
+                  <TableCell className="text-right">{s.test_score}</TableCell>
                   <TableCell>{formatDateTime(s.posted_time)}</TableCell>
                 </TableRow>
               ))}

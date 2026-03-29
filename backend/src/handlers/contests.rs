@@ -210,7 +210,7 @@ pub async fn get_contest(
     let contest_data = ContestData::parse(&contest.data);
 
     // Check user registration
-    let user_registered = if let Some(ref u) = user {
+    let (user_registered, reg_status) = if let Some(ref u) = user {
         let reg: Option<(i32,)> = sqlx::query_as(
             "SELECT reg_status FROM labs_contest_users WHERE contest_id = ? AND user_id = ?"
         )
@@ -218,9 +218,12 @@ pub async fn get_contest(
         .bind(u.user_id)
         .fetch_optional(&state.pool)
         .await?;
-        reg.is_some()
+        match reg {
+            Some((rs,)) => (true, Some(rs)),
+            None => (false, None),
+        }
     } else {
-        false
+        (false, None)
     };
 
     let pages = compute_pages(&contest, &status, user_registered);
@@ -247,6 +250,7 @@ pub async fn get_contest(
         "status": format!("{:?}", status),
         "pages": pages,
         "user_registered": user_registered,
+        "reg_status": reg_status,
         "problem_count": problem_count,
         "user_count": user_count,
     })))
@@ -420,7 +424,7 @@ pub async fn logout_contest(
 pub async fn list_contest_problems(
     State(state): State<AppState>,
     Path(contest_id): Path<i32>,
-    OptionalUser(_user): OptionalUser,
+    OptionalUser(user): OptionalUser,
 ) -> AppResult<Json<serde_json::Value>> {
     let problems: Vec<ContestProblem> = sqlx::query_as(
         "SELECT contest_id, short_name, problem_id, max_score, is_with_code_review, user_id \
@@ -430,23 +434,47 @@ pub async fn list_contest_problems(
     .fetch_all(&state.pool)
     .await?;
 
+    // If user is authenticated, get their best results per problem
+    let user_results: std::collections::HashMap<u32, (i32, rust_decimal::Decimal)> = if let Some(ref u) = user {
+        let rows: Vec<(u32, i32, rust_decimal::Decimal)> = sqlx::query_as(
+            "SELECT problem_id, MAX(test_result) as best_result, MAX(test_score) as best_score \
+             FROM labs_solutions \
+             WHERE contest_id = ? AND user_id = ? AND test_result >= 0 \
+             GROUP BY problem_id"
+        )
+        .bind(contest_id)
+        .bind(u.user_id)
+        .fetch_all(&state.pool)
+        .await?;
+        rows.into_iter().map(|(pid, res, score)| (pid, (res, score))).collect()
+    } else {
+        std::collections::HashMap::new()
+    };
+
     // Get problem details
     let mut result = Vec::new();
     for cp in &problems {
-        let problem: Option<(u32, String)> = sqlx::query_as(
-            "SELECT problem_id, title \
+        let problem: Option<(u32, String, i32)> = sqlx::query_as(
+            "SELECT problem_id, title, complexity \
              FROM labs_problems WHERE problem_id = ?"
         )
         .bind(cp.problem_id)
         .fetch_optional(&state.pool)
         .await?;
 
-        if let Some((pid, title)) = problem {
+        if let Some((pid, title, complexity)) = problem {
+            let (user_result, user_score) = user_results
+                .get(&pid)
+                .map(|(r, s)| (Some(*r), Some(s.clone())))
+                .unwrap_or((None, None));
             result.push(json!({
                 "problem_id": pid,
                 "short_name": cp.short_name,
                 "max_score": cp.max_score,
                 "title": title,
+                "complexity": complexity,
+                "user_result": user_result,
+                "user_score": user_score,
             }));
         }
     }
@@ -534,18 +562,19 @@ pub async fn list_contest_users(
     // Get user details
     let mut result = Vec::new();
     for cu in &users {
-        let user: Option<(u32, String, String)> = sqlx::query_as(
-            "SELECT user_id, nickname, FIO FROM labs_users WHERE user_id = ?"
+        let user: Option<(u32, String, String, String)> = sqlx::query_as(
+            "SELECT user_id, nickname, FIO, u_institution_name FROM labs_users WHERE user_id = ?"
         )
         .bind(cu.user_id)
         .fetch_optional(&state.pool)
         .await?;
 
-        if let Some((uid, nickname, fio)) = user {
+        if let Some((uid, nickname, fio, institution)) = user {
             result.push(json!({
                 "user_id": uid,
                 "nickname": nickname,
                 "fio": fio,
+                "u_institution_name": institution,
                 "reg_status": cu.reg_status,
             }));
         }

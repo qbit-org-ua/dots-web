@@ -86,6 +86,17 @@ export interface ContestProblem {
   short_name: string;
   title: string;
   max_score: number;
+  complexity?: number;
+  user_result?: number | null;
+  user_score?: string | null;
+}
+
+export interface ContestParticipant {
+  user_id: number;
+  nickname: string;
+  fio: string;
+  u_institution_name: string;
+  reg_status: number;
 }
 
 export interface Problem {
@@ -119,6 +130,10 @@ export interface Solution {
   module_val: number;
   compile_error: string | null;
   is_passed: number;
+  // Legacy aliases used by some frontend code
+  result?: number;
+  language_name?: string;
+  language_id?: number;
   problem_title?: string;
   short_name?: string;
   nickname?: string;

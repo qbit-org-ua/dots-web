@@ -5,6 +5,9 @@ backend/.env
 # Node.js
 frontend/node_modules/
 frontend/.next/
+frontend/.next-dev/
+frontend/next-env.d.ts
+frontend/tsconfig.tsbuildinfo
 frontend/.env.local
 
 # IDE

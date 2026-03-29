@@ -8,9 +8,10 @@ interface VerdictBadgeProps {
 }
 
 export function VerdictBadge({ result, short = false }: VerdictBadgeProps) {
+  if (result === undefined || result === null) return <span className="text-gray-400 text-xs">-</span>;
   const code = verdictCode(result);
   const color = verdictColor(code);
-  const label = VERDICT_LABELS[code] || 'Unknown';
+  const label = VERDICT_LABELS[code] || code;
 
   return (
     <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${color}`}>

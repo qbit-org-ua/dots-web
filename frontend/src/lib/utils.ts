@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format, fromUnixTime } from 'date-fns';
-import { VERDICT_CODES } from './constants';
+import { decodeVerdict } from './constants';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -19,14 +19,19 @@ export function formatDateTime(timestamp: number): string {
 
 export function formatDuration(seconds: number): string {
   if (!seconds) return '00:00:00';
-  const h = Math.floor(seconds / 3600);
+  const days = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
-  return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':');
+  const hms = [h, m, s].map((v) => String(v).padStart(2, '0')).join(':');
+  if (days > 0) {
+    return `${days} - ${hms}`;
+  }
+  return hms;
 }
 
 export function verdictCode(result: number): string {
-  return VERDICT_CODES[result] || 'UK';
+  return decodeVerdict(result);
 }
 
 export function verdictColor(code: string): string {

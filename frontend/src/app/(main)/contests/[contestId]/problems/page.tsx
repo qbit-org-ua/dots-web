@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
+import { VerdictBadge } from '@/components/verdict-badge';
 import type { ContestProblem } from '@/types';
 
 export default function ContestProblemsPage() {
@@ -41,9 +42,12 @@ export default function ContestProblemsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-20">#</TableHead>
+                <TableHead className="w-20">ID</TableHead>
                 <TableHead>Title</TableHead>
-                <TableHead className="text-right w-32">Max Score</TableHead>
+                <TableHead className="text-center w-28">Complexity</TableHead>
+                <TableHead className="text-center w-32">Result</TableHead>
+                <TableHead className="text-right w-28">Score</TableHead>
+                <TableHead className="text-right w-28">Max Score</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -54,6 +58,17 @@ export default function ContestProblemsPage() {
                     <Link href={`/problems/${p.problem_id}`} className="text-blue-600 hover:underline font-medium">
                       {p.title}
                     </Link>
+                  </TableCell>
+                  <TableCell className="text-center">{p.complexity ?? '-'}</TableCell>
+                  <TableCell className="text-center">
+                    {p.user_result != null ? (
+                      <VerdictBadge result={p.user_result} />
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {p.user_score != null ? p.user_score : '-'}
                   </TableCell>
                   <TableCell className="text-right">{p.max_score}</TableCell>
                 </TableRow>

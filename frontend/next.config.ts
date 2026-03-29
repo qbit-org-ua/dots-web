@@ -1,9 +1,10 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  distDir: '.next-dev',
   async rewrites() {
     return [
-      { source: '/api/:path*', destination: 'http://localhost:3001/api/:path*' },
+      { source: '/api/:path*', destination: 'http://172.17.0.5:3001/api/:path*' },
     ];
   },
 };
