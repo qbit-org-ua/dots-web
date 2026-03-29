@@ -71,8 +71,12 @@ pub struct UserListItem {
 pub async fn list_users(
     State(state): State<AppState>,
     Query(params): Query<PaginationParams>,
-    OptionalUser(_user): OptionalUser,
+    RequireAuth(user): RequireAuth,
 ) -> AppResult<Json<UserListResponse>> {
+    // ACCESS_READ_PROFILES (0x0004) — teachers and admins only
+    if !crate::auth::access::has_access(user.access, crate::auth::ACCESS_READ_PROFILES) {
+        return Err(AppError::AccessDenied);
+    }
     let page = params.page.unwrap_or(1).max(1);
     let per_page = params.per_page.unwrap_or(50).min(200);
     let offset = (page - 1) * per_page;

@@ -42,7 +42,7 @@ pub struct ProblemUpdateRequest {
 
 pub async fn list_problems(
     State(state): State<AppState>,
-    OptionalUser(_user): OptionalUser,
+    RequireAuth(user): RequireAuth,
     Query(params): Query<ProblemListParams>,
 ) -> AppResult<Json<serde_json::Value>> {
     let page = params.page.unwrap_or(1).max(1);
@@ -64,6 +64,11 @@ pub async fn list_problems(
         .await?;
 
         return Ok(Json(json!({ "problems": problems, "total": problems.len() })));
+    }
+
+    // Browsing all problems (no contest) requires ACCESS_WRITE_PROBLEMS (0x0100)
+    if !crate::auth::access::has_access(user.access, crate::auth::ACCESS_WRITE_PROBLEMS) {
+        return Err(AppError::AccessDenied);
     }
 
     let mut where_clauses = Vec::new();

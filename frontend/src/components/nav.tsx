@@ -8,8 +8,6 @@ import { cn } from '@/lib/utils';
 
 const navLinks = [
   { href: '/contests', label: 'Contests' },
-  { href: '/problems', label: 'Problems' },
-  { href: '/users', label: 'Users' },
 ];
 
 export function Nav() {
@@ -60,7 +58,7 @@ export function Nav() {
                     </span>
                   )}
                 </Link>
-                {user.access >= 1 && (
+                {(user.access & 0x0100) !== 0 && (
                   <Link
                     href="/admin"
                     className="px-3 py-2 rounded-md text-sm text-gray-300 hover:bg-slate-700 hover:text-white"
