@@ -3,10 +3,10 @@ import { Providers } from './providers';
 import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
 import './globals.css';
-import { Geist } from "next/font/google";
+import { Geist, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: 'DOTS - Distributed Olympiad Testing System',
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uk" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
+    <html lang="uk" className={cn("font-sans", inter.variable)} suppressHydrationWarning>
       <body className="font-sans bg-background text-foreground min-h-screen flex flex-col">
         <Providers>
           <Nav />
