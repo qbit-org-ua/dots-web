@@ -32,8 +32,8 @@ export default function SolutionsPage() {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">Please sign in to view your solutions.</p>
-        <Link href="/login" className="text-blue-600 hover:underline">Sign In</Link>
+        <p className="text-muted-foreground mb-4">Please sign in to view your solutions.</p>
+        <Link href="/login" className="text-primary hover:underline">Sign In</Link>
       </div>
     );
   }
@@ -45,15 +45,15 @@ export default function SolutionsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">My Solutions</h1>
+      <h1 className="text-2xl font-bold text-foreground">My Solutions</h1>
 
       {isLoading ? (
         <Spinner />
       ) : solutions.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No solutions found.</p>
+        <p className="text-muted-foreground py-8 text-center">No solutions found.</p>
       ) : (
         <>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -69,12 +69,12 @@ export default function SolutionsPage() {
                 {solutions.map((s) => (
                   <TableRow key={s.solution_id}>
                     <TableCell>
-                      <Link href={`/solutions/${s.solution_id}`} className="text-blue-600 hover:underline">
+                      <Link href={`/solutions/${s.solution_id}`} className="text-primary hover:underline">
                         {s.solution_id}
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Link href={`/problems/${s.problem_id}`} className="text-blue-600 hover:underline">
+                      <Link href={`/problems/${s.problem_id}`} className="text-primary hover:underline">
                         {s.problem_title || s.problem_id}
                       </Link>
                     </TableCell>
@@ -83,7 +83,7 @@ export default function SolutionsPage() {
                       <VerdictBadge result={s.test_result} />
                     </TableCell>
                     <TableCell className="text-right">{s.test_score}</TableCell>
-                    <TableCell className="text-gray-500">{formatDateTime(s.posted_time)}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatDateTime(s.posted_time)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

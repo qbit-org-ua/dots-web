@@ -5,8 +5,8 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { FormInput } from '@/components/ui/form-field';
 
 export default function ChangePasswordPage() {
   const { user } = useAuth();
@@ -20,8 +20,8 @@ export default function ChangePasswordPage() {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">Please sign in.</p>
-        <Link href="/login" className="text-blue-600 hover:underline">Sign In</Link>
+        <p className="text-muted-foreground mb-4">Please sign in.</p>
+        <Link href="/login" className="text-primary hover:underline">Sign In</Link>
       </div>
     );
   }
@@ -62,42 +62,44 @@ export default function ChangePasswordPage() {
   return (
     <div className="space-y-6 max-w-md mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Change Password</h1>
-        <Link href="/profile" className="text-sm text-blue-600 hover:underline">
+        <h1 className="text-2xl font-bold text-foreground">Change Password</h1>
+        <Link href="/profile" className="text-sm text-primary hover:underline">
           Back to Profile
         </Link>
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="bg-red-50 text-red-700 text-sm rounded-md p-3">{error}</div>}
-          {success && <div className="bg-green-50 text-green-700 text-sm rounded-md p-3">{success}</div>}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
+            {success && <div className="bg-green-500/10 text-green-700 dark:text-green-300 text-sm rounded-md p-3">{success}</div>}
 
-          <Input
-            label="Current Password"
-            type="password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-            required
-          />
-          <Input
-            label="New Password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-          />
-          <Input
-            label="Confirm New Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          <Button type="submit" loading={loading}>
-            Change Password
-          </Button>
-        </form>
+            <FormInput
+              label="Current Password"
+              type="password"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              required
+            />
+            <FormInput
+              label="New Password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+            />
+            <FormInput
+              label="Confirm New Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Changing...' : 'Change Password'}
+            </Button>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );

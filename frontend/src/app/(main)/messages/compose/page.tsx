@@ -6,9 +6,8 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { FormInput, FormTextarea } from '@/components/ui/form-field';
 
 export default function ComposeMessagePage() {
   const { user } = useAuth();
@@ -22,8 +21,8 @@ export default function ComposeMessagePage() {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">Please sign in to send messages.</p>
-        <Link href="/login" className="text-blue-600 hover:underline">Sign In</Link>
+        <p className="text-muted-foreground mb-4">Please sign in to send messages.</p>
+        <Link href="/login" className="text-primary hover:underline">Sign In</Link>
       </div>
     );
   }
@@ -46,41 +45,45 @@ export default function ComposeMessagePage() {
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Compose Message</h1>
-        <Link href="/messages" className="text-sm text-blue-600 hover:underline">
+        <h1 className="text-2xl font-bold text-foreground">Compose Message</h1>
+        <Link href="/messages" className="text-sm text-primary hover:underline">
           Back to Messages
         </Link>
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="bg-red-50 text-red-700 text-sm rounded-md p-3">{error}</div>}
-          <Input
-            label="To (nickname or user ID)"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            required
-          />
-          <Input
-            label="Subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            required
-          />
-          <Textarea
-            label="Message"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={8}
-            required
-          />
-          <div className="flex gap-3">
-            <Button type="submit" loading={loading}>Send Message</Button>
-            <Link href="/messages">
-              <Button type="button" variant="secondary">Cancel</Button>
-            </Link>
-          </div>
-        </form>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
+            <FormInput
+              label="To (nickname or user ID)"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              required
+            />
+            <FormInput
+              label="Subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              required
+            />
+            <FormTextarea
+              label="Message"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={8}
+              required
+            />
+            <div className="flex gap-3">
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Sending...' : 'Send Message'}
+              </Button>
+              <Link href="/messages">
+                <Button type="button" variant="secondary">Cancel</Button>
+              </Link>
+            </div>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );

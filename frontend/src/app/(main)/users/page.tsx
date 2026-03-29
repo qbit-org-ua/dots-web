@@ -33,7 +33,7 @@ export default function UsersPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+        <h1 className="text-2xl font-bold text-foreground">Users</h1>
         <div className="w-full sm:w-64">
           <Input
             placeholder="Search users..."
@@ -49,10 +49,10 @@ export default function UsersPage() {
       {isLoading ? (
         <Spinner />
       ) : users.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No users found.</p>
+        <p className="text-muted-foreground py-8 text-center">No users found.</p>
       ) : (
         <>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -66,7 +66,7 @@ export default function UsersPage() {
                 {users.map((u) => (
                   <TableRow key={u.user_id}>
                     <TableCell>
-                      <Link href={`/users/${u.user_id}`} className="text-blue-600 hover:underline font-medium">
+                      <Link href={`/users/${u.user_id}`} className="text-primary hover:underline font-medium">
                         {u.nickname}
                       </Link>
                     </TableCell>
@@ -74,7 +74,7 @@ export default function UsersPage() {
                       {u.fio || '-'}
                     </TableCell>
                     <TableCell>{u.city_name || '-'}</TableCell>
-                    <TableCell className="text-gray-500">
+                    <TableCell className="text-muted-foreground">
                       {u.lastlogin ? formatDateTime(u.lastlogin) : '-'}
                     </TableCell>
                   </TableRow>

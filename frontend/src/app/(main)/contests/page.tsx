@@ -12,6 +12,14 @@ import { Spinner } from '@/components/ui/spinner';
 import { Pagination } from '@/components/ui/pagination';
 import type { Contest } from '@/types';
 
+const BADGE_VARIANT_MAP: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  success: 'default',
+  warning: 'secondary',
+  danger: 'destructive',
+  info: 'outline',
+  neutral: 'secondary',
+};
+
 export default function ContestsPage() {
   const [page, setPage] = useState(1);
 
@@ -30,15 +38,15 @@ export default function ContestsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Contests</h1>
+      <h1 className="text-2xl font-bold text-foreground">Contests</h1>
 
       {isLoading ? (
         <Spinner />
       ) : contests.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No contests found.</p>
+        <p className="text-muted-foreground py-8 text-center">No contests found.</p>
       ) : (
         <>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -53,14 +61,14 @@ export default function ContestsPage() {
                 {contests.map((c) => (
                   <TableRow key={c.contest_id}>
                     <TableCell>
-                      <Link href={`/contests/${c.contest_id}`} className="text-blue-600 hover:underline font-medium">
+                      <Link href={`/contests/${c.contest_id}`} className="text-primary hover:underline font-medium">
                         {c.title}
                       </Link>
                     </TableCell>
                     <TableCell>{CONTEST_TYPES[c.contest_type] || c.contest_type}</TableCell>
                     <TableCell>{formatDateTime(c.start_time)}</TableCell>
                     <TableCell>
-                      <Badge color={(STATUS_COLORS[c.status] || 'neutral') as 'success' | 'warning' | 'danger' | 'info' | 'neutral'}>
+                      <Badge variant={BADGE_VARIANT_MAP[STATUS_COLORS[c.status] || 'neutral'] || 'secondary'}>
                         {c.status === 'going' ? 'Going' : c.status === 'finished' ? 'Finished' : c.status === 'wait' ? 'Waiting' : c.status}
                       </Badge>
                     </TableCell>

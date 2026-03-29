@@ -9,9 +9,17 @@ import { formatDateTime, formatDuration } from '@/lib/utils';
 import { CONTEST_TYPES, REG_STATUS_LABELS, REG_MODE_LABELS, STATUS_COLORS } from '@/lib/constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import type { ContestDetail, ContestData } from '@/types';
+
+const BADGE_VARIANT_MAP: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  success: 'default',
+  warning: 'secondary',
+  danger: 'destructive',
+  info: 'outline',
+  neutral: 'secondary',
+};
 
 function getRegModeLabel(options: number): string {
   if (options & 0x04) return REG_MODE_LABELS[0x04];
@@ -68,7 +76,7 @@ export default function ContestDetailPage() {
   const userRegistered: boolean = data?.user_registered ?? false;
 
   if (!contest) {
-    return <p className="text-center py-8 text-gray-500">Contest not found.</p>;
+    return <p className="text-center py-8 text-muted-foreground">Contest not found.</p>;
   }
 
   const durationSeconds = contestData?.duration_time ?? 0;
@@ -86,14 +94,23 @@ export default function ContestDetailPage() {
       {user && (
         <div className="flex gap-3 items-center">
           {!userRegistered ? (
-            <Button onClick={() => registerMutation.mutate()} loading={registerMutation.isPending} variant="success">
-              Register for Contest
+            <Button
+              onClick={() => registerMutation.mutate()}
+              disabled={registerMutation.isPending}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {registerMutation.isPending ? 'Registering...' : 'Register for Contest'}
             </Button>
           ) : (
             <>
-              <Badge color="success">Registered</Badge>
-              <Button onClick={() => leaveMutation.mutate()} loading={leaveMutation.isPending} variant="danger" size="sm">
-                Leave Contest
+              <Badge variant="default">Registered</Badge>
+              <Button
+                onClick={() => leaveMutation.mutate()}
+                disabled={leaveMutation.isPending}
+                variant="destructive"
+                size="sm"
+              >
+                {leaveMutation.isPending ? 'Leaving...' : 'Leave Contest'}
               </Button>
             </>
           )}
@@ -103,63 +120,70 @@ export default function ContestDetailPage() {
       {/* Content + details */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
-          {contest.info ? (
-            <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: contest.info }} />
-          ) : (
-            <p className="text-gray-500">No description available.</p>
-          )}
+          <CardContent>
+            {contest.info ? (
+              <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: contest.info }} />
+            ) : (
+              <p className="text-muted-foreground">No description available.</p>
+            )}
+          </CardContent>
         </Card>
 
         <div className="space-y-4">
-          <Card title="Details">
-            <dl className="space-y-3 text-sm">
-              <div>
-                <dt className="text-gray-500">Contest Type</dt>
-                <dd className="font-medium">{CONTEST_TYPES[contest.contest_type] || contest.contest_type}</dd>
-              </div>
-              <div>
-                <dt className="text-gray-500">Start Time</dt>
-                <dd className="font-medium">{formatDateTime(contest.start_time)}</dd>
-              </div>
-              {endTime > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="space-y-3 text-sm">
                 <div>
-                  <dt className="text-gray-500">End Time</dt>
-                  <dd className="font-medium">{formatDateTime(endTime)}</dd>
+                  <dt className="text-muted-foreground">Contest Type</dt>
+                  <dd className="font-medium">{CONTEST_TYPES[contest.contest_type] || contest.contest_type}</dd>
                 </div>
-              )}
-              {durationSeconds > 0 && (
                 <div>
-                  <dt className="text-gray-500">Duration</dt>
-                  <dd className="font-medium">{formatDuration(durationSeconds)}</dd>
+                  <dt className="text-muted-foreground">Start Time</dt>
+                  <dd className="font-medium">{formatDateTime(contest.start_time)}</dd>
                 </div>
-              )}
-              <div>
-                <dt className="text-gray-500">Status</dt>
-                <dd><Badge color={(STATUS_COLORS[status] || 'neutral') as 'success' | 'warning' | 'danger' | 'info' | 'neutral'}>{status}</Badge></dd>
-              </div>
-              {elapsed > 0 && endTime > 0 && (
+                {endTime > 0 && (
+                  <div>
+                    <dt className="text-muted-foreground">End Time</dt>
+                    <dd className="font-medium">{formatDateTime(endTime)}</dd>
+                  </div>
+                )}
+                {durationSeconds > 0 && (
+                  <div>
+                    <dt className="text-muted-foreground">Duration</dt>
+                    <dd className="font-medium">{formatDuration(durationSeconds)}</dd>
+                  </div>
+                )}
                 <div>
-                  <dt className="text-gray-500">Time Elapsed</dt>
-                  <dd className="font-medium font-mono">{formatTimeRemaining(Math.min(elapsed, durationSeconds))}</dd>
+                  <dt className="text-muted-foreground">Status</dt>
+                  <dd><Badge variant={BADGE_VARIANT_MAP[STATUS_COLORS[status] || 'neutral'] || 'secondary'}>{status}</Badge></dd>
                 </div>
-              )}
-              {remaining > 0 && (
+                {elapsed > 0 && endTime > 0 && (
+                  <div>
+                    <dt className="text-muted-foreground">Time Elapsed</dt>
+                    <dd className="font-medium font-mono">{formatTimeRemaining(Math.min(elapsed, durationSeconds))}</dd>
+                  </div>
+                )}
+                {remaining > 0 && (
+                  <div>
+                    <dt className="text-muted-foreground">Time Remaining</dt>
+                    <dd className="font-medium font-mono">{formatTimeRemaining(remaining)}</dd>
+                  </div>
+                )}
                 <div>
-                  <dt className="text-gray-500">Time Remaining</dt>
-                  <dd className="font-medium font-mono">{formatTimeRemaining(remaining)}</dd>
+                  <dt className="text-muted-foreground">Registration Mode</dt>
+                  <dd className="font-medium">{getRegModeLabel(contest.options)}</dd>
                 </div>
-              )}
-              <div>
-                <dt className="text-gray-500">Registration Mode</dt>
-                <dd className="font-medium">{getRegModeLabel(contest.options)}</dd>
-              </div>
-              {user && (
-                <div>
-                  <dt className="text-gray-500">Your Registration</dt>
-                  <dd className="font-medium">{regStatusLabel}</dd>
-                </div>
-              )}
-            </dl>
+                {user && (
+                  <div>
+                    <dt className="text-muted-foreground">Your Registration</dt>
+                    <dd className="font-medium">{regStatusLabel}</dd>
+                  </div>
+                )}
+              </dl>
+            </CardContent>
           </Card>
         </div>
       </div>

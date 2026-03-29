@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { formatDateTime } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
 import { Pagination } from '@/components/ui/pagination';
 import { VerdictBadge } from '@/components/verdict-badge';
+import { FormInput } from '@/components/ui/form-field';
 import type { Solution } from '@/types';
 
 export default function AdminSolutionsPage() {
@@ -38,11 +38,11 @@ export default function AdminSolutionsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">All Solutions</h1>
+      <h1 className="text-2xl font-bold text-foreground">All Solutions</h1>
 
       <div className="flex gap-4 flex-wrap">
         <div className="w-40">
-          <Input
+          <FormInput
             label="User ID"
             type="text"
             value={userId}
@@ -51,7 +51,7 @@ export default function AdminSolutionsPage() {
           />
         </div>
         <div className="w-40">
-          <Input
+          <FormInput
             label="Contest ID"
             type="text"
             value={contestId}
@@ -60,7 +60,7 @@ export default function AdminSolutionsPage() {
           />
         </div>
         <div className="w-40">
-          <Input
+          <FormInput
             label="Problem ID"
             type="text"
             value={problemId}
@@ -73,11 +73,11 @@ export default function AdminSolutionsPage() {
       {isLoading ? (
         <Spinner />
       ) : solutions.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No solutions found.</p>
+        <p className="text-muted-foreground py-8 text-center">No solutions found.</p>
       ) : (
         <>
-          <p className="text-sm text-gray-500">{total} solutions total</p>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <p className="text-sm text-muted-foreground">{total} solutions total</p>
+          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -94,23 +94,23 @@ export default function AdminSolutionsPage() {
                 {solutions.map((s) => (
                   <TableRow key={s.solution_id}>
                     <TableCell>
-                      <Link href={`/solutions/${s.solution_id}`} className="text-blue-600 hover:underline">
+                      <Link href={`/solutions/${s.solution_id}`} className="text-primary hover:underline">
                         {s.solution_id}
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Link href={`/users/${s.user_id}`} className="text-blue-600 hover:underline">
+                      <Link href={`/users/${s.user_id}`} className="text-primary hover:underline">
                         {s.user_id}
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Link href={`/problems/${s.problem_id}`} className="text-blue-600 hover:underline">
+                      <Link href={`/problems/${s.problem_id}`} className="text-primary hover:underline">
                         {s.problem_id}
                       </Link>
                     </TableCell>
                     <TableCell>
                       {s.contest_id ? (
-                        <Link href={`/contests/${s.contest_id}`} className="text-blue-600 hover:underline">
+                        <Link href={`/contests/${s.contest_id}`} className="text-primary hover:underline">
                           {s.contest_id}
                         </Link>
                       ) : '-'}
@@ -119,7 +119,7 @@ export default function AdminSolutionsPage() {
                       <VerdictBadge result={s.test_result} />
                     </TableCell>
                     <TableCell className="text-right">{s.test_score}</TableCell>
-                    <TableCell className="text-gray-500 text-xs">{formatDateTime(s.posted_time)}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{formatDateTime(s.posted_time)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

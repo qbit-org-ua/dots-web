@@ -4,11 +4,16 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { FormInput } from '@/components/ui/form-field';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import type { Group } from '@/types';
 
 export default function AdminGroupsPage() {
@@ -71,14 +76,14 @@ export default function AdminGroupsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Groups</h1>
+        <h1 className="text-2xl font-bold text-foreground">Groups</h1>
         <Button onClick={openCreate} size="sm">Create Group</Button>
       </div>
 
       {isLoading ? (
         <Spinner />
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -93,13 +98,13 @@ export default function AdminGroupsPage() {
                 <TableRow key={g.group_id}>
                   <TableCell>{g.group_id}</TableCell>
                   <TableCell className="font-medium">{g.group_name}</TableCell>
-                  <TableCell className="text-gray-500">{g.group_description}</TableCell>
+                  <TableCell className="text-muted-foreground">{g.group_description}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button size="sm" variant="ghost" onClick={() => openEdit(g)}>Edit</Button>
                       <Button
                         size="sm"
-                        variant="danger"
+                        variant="destructive"
                         onClick={() => {
                           if (confirm('Delete this group?')) deleteMutation.mutate(g.group_id);
                         }}
@@ -115,26 +120,29 @@ export default function AdminGroupsPage() {
         </div>
       )}
 
-      <Modal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        title={editGroup ? 'Edit Group' : 'Create Group'}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            saveMutation.mutate();
-          }}
-          className="space-y-4"
-        >
-          <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-          <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <div className="flex gap-3">
-            <Button type="submit" loading={saveMutation.isPending}>Save</Button>
-            <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-          </div>
-        </form>
-      </Modal>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editGroup ? 'Edit Group' : 'Create Group'}</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveMutation.mutate();
+            }}
+            className="space-y-4"
+          >
+            <FormInput label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <FormInput label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+            <DialogFooter>
+              <Button type="submit" disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? 'Saving...' : 'Save'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { formatDateTime } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { Pagination } from '@/components/ui/pagination';
 
@@ -35,26 +35,28 @@ export default function AdminLogsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">System Logs</h1>
+      <h1 className="text-2xl font-bold text-foreground">System Logs</h1>
 
       {isLoading ? (
         <Spinner />
       ) : logs.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No logs found.</p>
+        <p className="text-muted-foreground py-8 text-center">No logs found.</p>
       ) : (
         <>
           <Card>
-            <div className="space-y-2">
-              {logs.map((log) => (
-                <div key={log.log_id} className="flex items-start gap-4 py-2 border-b border-gray-100 last:border-0 text-sm">
-                  <span className="text-gray-400 whitespace-nowrap">{formatDateTime(log.time)}</span>
-                  <span className="text-gray-600 font-mono">{log.nickname || log.user_id}</span>
-                  <span className="font-medium text-gray-800">{log.action}</span>
-                  <span className="text-gray-500 flex-1">{log.details}</span>
-                  <span className="text-gray-400 font-mono text-xs">{log.ip}</span>
-                </div>
-              ))}
-            </div>
+            <CardContent>
+              <div className="space-y-2">
+                {logs.map((log) => (
+                  <div key={log.log_id} className="flex items-start gap-4 py-2 border-b border-border last:border-0 text-sm">
+                    <span className="text-muted-foreground/70 whitespace-nowrap">{formatDateTime(log.time)}</span>
+                    <span className="text-muted-foreground font-mono">{log.nickname || log.user_id}</span>
+                    <span className="font-medium text-foreground">{log.action}</span>
+                    <span className="text-muted-foreground flex-1">{log.details}</span>
+                    <span className="text-muted-foreground/70 font-mono text-xs">{log.ip}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
           </Card>
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>

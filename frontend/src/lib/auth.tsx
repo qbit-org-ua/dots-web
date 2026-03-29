@@ -42,6 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await api.post('/api/v1/auth/logout');
     setUser(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('dots-theme');
+    }
   };
 
   const register = async (email: string, nickname: string) => {

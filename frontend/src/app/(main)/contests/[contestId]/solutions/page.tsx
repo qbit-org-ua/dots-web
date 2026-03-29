@@ -31,8 +31,8 @@ export default function ContestSolutionsPage() {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">Please sign in to view solutions.</p>
-        <Link href="/login" className="text-blue-600 hover:underline">Sign In</Link>
+        <p className="text-muted-foreground mb-4">Please sign in to view solutions.</p>
+        <Link href="/login" className="text-primary hover:underline">Sign In</Link>
       </div>
     );
   }
@@ -42,9 +42,9 @@ export default function ContestSolutionsPage() {
       {isLoading ? (
         <Spinner />
       ) : solutions.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No solutions submitted yet.</p>
+        <p className="text-muted-foreground py-8 text-center">No solutions submitted yet.</p>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -60,7 +60,7 @@ export default function ContestSolutionsPage() {
               {solutions.map((s) => (
                 <TableRow key={s.solution_id}>
                   <TableCell>
-                    <Link href={`/solutions/${s.solution_id}`} className="text-blue-600 hover:underline">
+                    <Link href={`/solutions/${s.solution_id}`} className="text-primary hover:underline">
                       {s.solution_id}
                     </Link>
                   </TableCell>
@@ -68,7 +68,7 @@ export default function ContestSolutionsPage() {
                     {s.short_name ? `${s.short_name}. ` : ''}
                     {s.problem_title || `Problem #${s.problem_id}`}
                   </TableCell>
-                  <TableCell className="text-gray-600 text-xs font-mono">
+                  <TableCell className="text-muted-foreground text-xs font-mono">
                     {s.filename || '-'}
                   </TableCell>
                   <TableCell>

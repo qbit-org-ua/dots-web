@@ -6,10 +6,8 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { FormInput, FormSelect, FormTextarea } from '@/components/ui/form-field';
 import type { Language } from '@/types';
 
 export default function CreateContestPage() {
@@ -64,63 +62,67 @@ export default function CreateContestPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Create Contest</h1>
-        <Link href="/admin" className="text-sm text-blue-600 hover:underline">Back to Admin</Link>
+        <h1 className="text-2xl font-bold text-foreground">Create Contest</h1>
+        <Link href="/admin" className="text-sm text-primary hover:underline">Back to Admin</Link>
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="bg-red-50 text-red-700 text-sm rounded-md p-3">{error}</div>}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
 
-          <Input label="Title" value={form.title} onChange={handleChange('title')} required />
+            <FormInput label="Title" value={form.title} onChange={handleChange('title')} required />
 
-          <Select
-            label="Contest Type"
-            value={form.contest_type}
-            onChange={handleChange('contest_type')}
-            options={[
-              { value: 'classic', label: 'Classic' },
-              { value: 'acm', label: 'ACM-ICPC' },
-              { value: 'ioi', label: 'IOI' },
-              { value: 'school', label: 'School' },
-              { value: 'practice', label: 'Practice' },
-            ]}
-          />
+            <FormSelect
+              label="Contest Type"
+              value={form.contest_type}
+              onChange={handleChange('contest_type')}
+              options={[
+                { value: 'classic', label: 'Classic' },
+                { value: 'acm', label: 'ACM-ICPC' },
+                { value: 'ioi', label: 'IOI' },
+                { value: 'school', label: 'School' },
+                { value: 'practice', label: 'Practice' },
+              ]}
+            />
 
-          <Input
-            label="Start Time"
-            type="datetime-local"
-            value={form.start_time}
-            onChange={handleChange('start_time')}
-            required
-          />
+            <FormInput
+              label="Start Time"
+              type="datetime-local"
+              value={form.start_time}
+              onChange={handleChange('start_time')}
+              required
+            />
 
-          <Input
-            label="Duration (seconds)"
-            type="number"
-            value={form.duration_time}
-            onChange={handleChange('duration_time')}
-          />
+            <FormInput
+              label="Duration (seconds)"
+              type="number"
+              value={form.duration_time}
+              onChange={handleChange('duration_time')}
+            />
 
-          <Select
-            label="Visible"
-            value={form.visible}
-            onChange={handleChange('visible')}
-            options={[
-              { value: '1', label: 'Yes' },
-              { value: '0', label: 'No' },
-            ]}
-          />
+            <FormSelect
+              label="Visible"
+              value={form.visible}
+              onChange={handleChange('visible')}
+              options={[
+                { value: '1', label: 'Yes' },
+                { value: '0', label: 'No' },
+              ]}
+            />
 
-          <Textarea
-            label="Description (HTML)"
-            value={form.description}
-            onChange={handleChange('description')}
-            rows={6}
-          />
+            <FormTextarea
+              label="Description (HTML)"
+              value={form.description}
+              onChange={handleChange('description')}
+              rows={6}
+            />
 
-          <Button type="submit" loading={loading}>Create Contest</Button>
-        </form>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Creating...' : 'Create Contest'}
+            </Button>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );

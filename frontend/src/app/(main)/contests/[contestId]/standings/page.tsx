@@ -25,7 +25,6 @@ export default function ContestStandingsPage() {
     queryKey: ['standings', contestId],
     queryFn: async () => {
       const res = await api.get(`/api/v1/contests/${contestId}/standings`);
-      // API returns { standings: { problems, users, summary }, contest: {...} }
       return res.data.standings as StandingsData;
     },
   });
@@ -37,9 +36,9 @@ export default function ContestStandingsPage() {
       {isLoading ? (
         <Spinner />
       ) : !data || !data.users || data.users.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No standings data available.</p>
+        <p className="text-muted-foreground py-8 text-center">No standings data available.</p>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
           {contestType === 'acm' ? (
             <AcmStandings data={data} />
           ) : (

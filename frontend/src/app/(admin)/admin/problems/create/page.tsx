@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { FormInput, FormTextarea } from '@/components/ui/form-field';
 
 export default function CreateProblemPage() {
   const router = useRouter();
@@ -45,25 +44,29 @@ export default function CreateProblemPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Create Problem</h1>
-        <Link href="/admin" className="text-sm text-blue-600 hover:underline">Back to Admin</Link>
+        <h1 className="text-2xl font-bold text-foreground">Create Problem</h1>
+        <Link href="/admin" className="text-sm text-primary hover:underline">Back to Admin</Link>
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="bg-red-50 text-red-700 text-sm rounded-md p-3">{error}</div>}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
 
-          <Input label="Title" value={form.title} onChange={handleChange('title')} required />
-          <Input label="Complexity" type="number" value={form.complexity} onChange={handleChange('complexity')} />
-          <Textarea
-            label="Description (HTML)"
-            value={form.description}
-            onChange={handleChange('description')}
-            rows={10}
-          />
+            <FormInput label="Title" value={form.title} onChange={handleChange('title')} required />
+            <FormInput label="Complexity" type="number" value={form.complexity} onChange={handleChange('complexity')} />
+            <FormTextarea
+              label="Description (HTML)"
+              value={form.description}
+              onChange={handleChange('description')}
+              rows={10}
+            />
 
-          <Button type="submit" loading={loading}>Create Problem</Button>
-        </form>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Creating...' : 'Create Problem'}
+            </Button>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );

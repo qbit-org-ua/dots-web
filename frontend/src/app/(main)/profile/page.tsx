@@ -6,9 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { FormInput } from '@/components/ui/form-field';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -46,8 +46,8 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">Please sign in to edit your profile.</p>
-        <Link href="/login" className="text-blue-600 hover:underline">Sign In</Link>
+        <p className="text-muted-foreground mb-4">Please sign in to edit your profile.</p>
+        <Link href="/login" className="text-primary hover:underline">Sign In</Link>
       </div>
     );
   }
@@ -77,44 +77,46 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
-        <Link href="/profile/password" className="text-sm text-blue-600 hover:underline">
+        <h1 className="text-2xl font-bold text-foreground">Edit Profile</h1>
+        <Link href="/profile/password" className="text-sm text-primary hover:underline">
           Change Password
         </Link>
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="bg-red-50 text-red-700 text-sm rounded-md p-3">{error}</div>}
-          {success && <div className="bg-green-50 text-green-700 text-sm rounded-md p-3">{success}</div>}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
+            {success && <div className="bg-green-500/10 text-green-700 dark:text-green-300 text-sm rounded-md p-3">{success}</div>}
 
-          <Input label="Full Name (ПІБ)" value={form.fio} onChange={handleChange('fio')} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="City" value={form.city_name} onChange={handleChange('city_name')} />
-            <Input label="Region" value={form.region_name} onChange={handleChange('region_name')} />
-          </div>
-          <Input label="Country" value={form.country_name} onChange={handleChange('country_name')} />
-          <Input label="Job" value={form.job} onChange={handleChange('job')} />
+            <FormInput label="Full Name" value={form.fio} onChange={handleChange('fio')} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormInput label="City" value={form.city_name} onChange={handleChange('city_name')} />
+              <FormInput label="Region" value={form.region_name} onChange={handleChange('region_name')} />
+            </div>
+            <FormInput label="Country" value={form.country_name} onChange={handleChange('country_name')} />
+            <FormInput label="Job" value={form.job} onChange={handleChange('job')} />
 
-          <h3 className="text-sm font-semibold text-gray-700 pt-2 border-t">Student Info</h3>
-          <Input label="Institution" value={form.u_institution_name} onChange={handleChange('u_institution_name')} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Specialty" value={form.u_specialty} onChange={handleChange('u_specialty')} />
-            <Input label="Course/Year" value={form.u_kurs} onChange={handleChange('u_kurs')} />
-          </div>
+            <h3 className="text-sm font-semibold text-foreground pt-2 border-t border-border">Student Info</h3>
+            <FormInput label="Institution" value={form.u_institution_name} onChange={handleChange('u_institution_name')} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormInput label="Specialty" value={form.u_specialty} onChange={handleChange('u_specialty')} />
+              <FormInput label="Course/Year" value={form.u_kurs} onChange={handleChange('u_kurs')} />
+            </div>
 
-          <h3 className="text-sm font-semibold text-gray-700 pt-2 border-t">School/Organization</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Region (Область)" value={form.o_region} onChange={handleChange('o_region')} />
-            <Input label="District (Район)" value={form.o_district} onChange={handleChange('o_district')} />
-          </div>
-          <Input label="School/Organization Name" value={form.o_full_name} onChange={handleChange('o_full_name')} />
-          <Input label="Grade (Клас)" value={form.o_grade} onChange={handleChange('o_grade')} />
+            <h3 className="text-sm font-semibold text-foreground pt-2 border-t border-border">School/Organization</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormInput label="Region" value={form.o_region} onChange={handleChange('o_region')} />
+              <FormInput label="District" value={form.o_district} onChange={handleChange('o_district')} />
+            </div>
+            <FormInput label="School/Organization Name" value={form.o_full_name} onChange={handleChange('o_full_name')} />
+            <FormInput label="Grade" value={form.o_grade} onChange={handleChange('o_grade')} />
 
-          <Button type="submit" loading={loading}>
-            Save Changes
-          </Button>
-        </form>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );

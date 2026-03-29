@@ -8,7 +8,7 @@ interface VerdictBadgeProps {
 }
 
 export function VerdictBadge({ result, short = false }: VerdictBadgeProps) {
-  if (result === undefined || result === null) return <span className="text-gray-400 text-xs">-</span>;
+  if (result === undefined || result === null) return <span className="text-muted-foreground text-xs">-</span>;
   const code = verdictCode(result);
   const color = verdictColor(code);
   const label = VERDICT_LABELS[code] || code;

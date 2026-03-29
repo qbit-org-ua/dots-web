@@ -17,24 +17,24 @@ export function AcmStandings({ data }: { data: StandingsData }) {
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="bg-gray-50 border-b">
-            <th className="px-3 py-2 text-left font-medium text-gray-500 w-12">#</th>
-            <th className="px-3 py-2 text-left font-medium text-gray-500">Team</th>
+          <tr className="bg-muted border-b border-border">
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground w-12">#</th>
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Team</th>
             {data.problems.map((p) => (
-              <th key={p.problem_id} className="px-3 py-2 text-center font-medium text-gray-500 min-w-[70px]" title={p.title}>
+              <th key={p.problem_id} className="px-3 py-2 text-center font-medium text-muted-foreground min-w-[70px]" title={p.title}>
                 {p.short_name}
               </th>
             ))}
-            <th className="px-3 py-2 text-center font-medium text-gray-500">Solved</th>
-            <th className="px-3 py-2 text-center font-medium text-gray-500">Penalty</th>
+            <th className="px-3 py-2 text-center font-medium text-muted-foreground">Solved</th>
+            <th className="px-3 py-2 text-center font-medium text-muted-foreground">Penalty</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-border">
           {data.users.map((user) => (
-            <tr key={user.user_id} className="hover:bg-gray-50">
-              <td className="px-3 py-2 text-gray-600 font-medium">{user.place}</td>
+            <tr key={user.user_id} className="hover:bg-muted/50">
+              <td className="px-3 py-2 text-muted-foreground font-medium">{user.place}</td>
               <td className="px-3 py-2">
-                <Link href={`/users/${user.user_id}`} className="text-blue-600 hover:underline font-medium">
+                <Link href={`/users/${user.user_id}`} className="text-primary hover:underline font-medium">
                   {user.nickname}
                 </Link>
               </td>
@@ -46,30 +46,30 @@ export function AcmStandings({ data }: { data: StandingsData }) {
                     key={idx}
                     className={cn(
                       'px-3 py-1 text-center text-xs',
-                      solved ? 'bg-green-100' : attempts > 0 ? 'bg-red-50' : ''
+                      solved ? 'bg-green-500/15' : attempts > 0 ? 'bg-red-500/10' : ''
                     )}
                   >
                     {solved ? (
                       <div>
-                        <div className={cn('font-bold', ps.is_first_solve ? 'text-green-700' : 'text-green-600')}>
+                        <div className={cn('font-bold', ps.is_first_solve ? 'text-green-700 dark:text-green-300' : 'text-green-600 dark:text-green-400')}>
                           +{attempts > 1 ? attempts - 1 : ''}
                         </div>
-                        <div className="text-gray-500">{formatTime(ps.time)}</div>
+                        <div className="text-muted-foreground">{formatTime(ps.time)}</div>
                       </div>
                     ) : attempts > 0 ? (
-                      <div className="font-bold text-red-600">-{attempts}</div>
+                      <div className="font-bold text-red-600 dark:text-red-400">-{attempts}</div>
                     ) : null}
                   </td>
                 );
               })}
               <td className="px-3 py-2 text-center font-bold">{user.total_solved}</td>
-              <td className="px-3 py-2 text-center text-gray-600">{user.penalty}</td>
+              <td className="px-3 py-2 text-center text-muted-foreground">{user.penalty}</td>
             </tr>
           ))}
         </tbody>
         {data.summary && data.summary.length > 0 && (
           <tfoot>
-            <tr className="bg-gray-50 border-t text-xs text-gray-500">
+            <tr className="bg-muted border-t border-border text-xs text-muted-foreground">
               <td className="px-3 py-1" colSpan={2}>Tried / Solved</td>
               {data.summary.map((s, idx) => (
                 <td key={idx} className="px-3 py-1 text-center">

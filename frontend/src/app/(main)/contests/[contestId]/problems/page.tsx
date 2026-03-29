@@ -29,9 +29,9 @@ export default function ContestProblemsPage() {
       {isLoading ? (
         <Spinner />
       ) : problems.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No problems available.</p>
+        <p className="text-muted-foreground py-8 text-center">No problems available.</p>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -46,9 +46,9 @@ export default function ContestProblemsPage() {
             <TableBody>
               {problems.map((p) => (
                 <TableRow key={p.problem_id}>
-                  <TableCell className="font-mono font-bold text-gray-600">{p.short_name}</TableCell>
+                  <TableCell className="font-mono font-bold text-muted-foreground">{p.short_name}</TableCell>
                   <TableCell>
-                    <Link href={`/problems/${p.problem_id}`} className="text-blue-600 hover:underline font-medium">
+                    <Link href={`/problems/${p.problem_id}`} className="text-primary hover:underline font-medium">
                       {p.title}
                     </Link>
                   </TableCell>
@@ -57,7 +57,7 @@ export default function ContestProblemsPage() {
                     {p.user_result != null ? (
                       <VerdictBadge result={p.user_result} />
                     ) : (
-                      <span className="text-gray-400">-</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">

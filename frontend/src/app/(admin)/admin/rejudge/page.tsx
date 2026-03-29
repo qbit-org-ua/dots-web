@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { FormSelect } from '@/components/ui/form-field';
 import type { Contest, ContestProblem } from '@/types';
 
 export default function AdminRejudgePage() {
@@ -53,36 +53,38 @@ export default function AdminRejudgePage() {
 
   return (
     <div className="space-y-6 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900">Rejudge Solutions</h1>
+      <h1 className="text-2xl font-bold text-foreground">Rejudge Solutions</h1>
 
       <Card>
-        <div className="space-y-4">
-          <Select
-            label="Contest"
-            value={contestId}
-            onChange={(e) => {
-              setContestId(e.target.value);
-              setProblemId('');
-            }}
-            options={contests.map((c) => ({ value: c.contest_id, label: c.title }))}
-          />
-          {contestId && (
-            <Select
-              label="Problem (optional - leave empty for all)"
-              value={problemId}
-              onChange={(e) => setProblemId(e.target.value)}
-              options={problems.map((p) => ({ value: p.problem_id, label: `${p.short_name}. ${p.title}` }))}
+        <CardContent>
+          <div className="space-y-4">
+            <FormSelect
+              label="Contest"
+              value={contestId}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                setContestId(e.target.value);
+                setProblemId('');
+              }}
+              options={contests.map((c) => ({ value: c.contest_id, label: c.title }))}
             />
-          )}
-          <Button onClick={handleRejudge} loading={loading} disabled={!contestId} variant="danger">
-            Start Rejudge
-          </Button>
-          {result && (
-            <div className={`text-sm rounded-md p-3 ${result.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
-              {result}
-            </div>
-          )}
-        </div>
+            {contestId && (
+              <FormSelect
+                label="Problem (optional - leave empty for all)"
+                value={problemId}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setProblemId(e.target.value)}
+                options={problems.map((p) => ({ value: p.problem_id, label: `${p.short_name}. ${p.title}` }))}
+              />
+            )}
+            <Button onClick={handleRejudge} disabled={loading || !contestId} variant="destructive">
+              {loading ? 'Starting...' : 'Start Rejudge'}
+            </Button>
+            {result && (
+              <div className={`text-sm rounded-md p-3 ${result.startsWith('Error') ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-700 dark:text-green-300'}`}>
+                {result}
+              </div>
+            )}
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

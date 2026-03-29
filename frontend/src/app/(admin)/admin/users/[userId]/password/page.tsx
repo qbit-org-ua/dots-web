@@ -1,18 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
+import { Card, CardContent } from '@/components/ui/card';
+import { FormInput } from '@/components/ui/form-field';
 
 export default function AdminChangePasswordPage() {
   const params = useParams();
-  const router = useRouter();
   const userId = params.userId as string;
 
   const [newPassword, setNewPassword] = useState('');
@@ -65,38 +63,40 @@ export default function AdminChangePasswordPage() {
   return (
     <div className="max-w-lg mx-auto space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Change Password</h1>
-        <Link href={`/users/${userId}`} className="text-sm text-blue-600 hover:underline">
+        <h1 className="text-2xl font-bold text-foreground">Change Password</h1>
+        <Link href={`/users/${userId}`} className="text-sm text-primary hover:underline">
           Back to Profile
         </Link>
       </div>
 
-      <p className="text-sm text-gray-500">
-        Changing password for <Link href={`/users/${userId}`} className="text-blue-600 hover:underline font-medium">{nickname}</Link>
+      <p className="text-sm text-muted-foreground">
+        Changing password for <Link href={`/users/${userId}`} className="text-primary hover:underline font-medium">{nickname}</Link>
       </p>
 
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="bg-red-50 text-red-700 text-sm rounded-md p-3">{error}</div>}
-          {success && <div className="bg-green-50 text-green-700 text-sm rounded-md p-3">{success}</div>}
-          <Input
-            label="New Password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-          />
-          <Input
-            label="Confirm New Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          <Button type="submit" loading={loading}>
-            Change Password
-          </Button>
-        </form>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3">{error}</div>}
+            {success && <div className="bg-green-500/10 text-green-700 dark:text-green-300 text-sm rounded-md p-3">{success}</div>}
+            <FormInput
+              label="New Password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+            />
+            <FormInput
+              label="Confirm New Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Changing...' : 'Change Password'}
+            </Button>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );

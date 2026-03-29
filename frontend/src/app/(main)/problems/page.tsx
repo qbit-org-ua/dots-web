@@ -32,7 +32,7 @@ export default function ProblemsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Problem Archive</h1>
+        <h1 className="text-2xl font-bold text-foreground">Problem Archive</h1>
         <div className="w-full sm:w-64">
           <Input
             placeholder="Search problems..."
@@ -48,10 +48,10 @@ export default function ProblemsPage() {
       {isLoading ? (
         <Spinner />
       ) : problems.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No problems found.</p>
+        <p className="text-muted-foreground py-8 text-center">No problems found.</p>
       ) : (
         <>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -63,17 +63,17 @@ export default function ProblemsPage() {
               <TableBody>
                 {problems.map((p) => (
                   <TableRow key={p.problem_id}>
-                    <TableCell className="text-gray-500">{p.problem_id}</TableCell>
+                    <TableCell className="text-muted-foreground">{p.problem_id}</TableCell>
                     <TableCell>
-                      <Link href={`/problems/${p.problem_id}`} className="text-blue-600 hover:underline font-medium">
+                      <Link href={`/problems/${p.problem_id}`} className="text-primary hover:underline font-medium">
                         {p.title}
                       </Link>
                     </TableCell>
                     <TableCell className="text-right">
                       {p.complexity > 0 ? (
-                        <span className="text-gray-600">{p.complexity}</span>
+                        <span className="text-muted-foreground">{p.complexity}</span>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-muted-foreground/70">-</span>
                       )}
                     </TableCell>
                   </TableRow>

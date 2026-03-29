@@ -10,12 +10,12 @@ import { CONTEST_TYPES } from '@/lib/constants';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 
-const STATUS_BADGE: Record<string, string> = {
-  Going: 'success',
-  Finished: 'neutral',
-  Wait: 'warning',
-  GoingFrozen: 'info',
-  FinishedFrozen: 'neutral',
+const STATUS_BADGE_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  Going: 'default',
+  Finished: 'secondary',
+  Wait: 'outline',
+  GoingFrozen: 'outline',
+  FinishedFrozen: 'secondary',
 };
 
 interface ContestTab {
@@ -64,29 +64,29 @@ export default function ContestLayout({ children }: { children: React.ReactNode 
   return (
     <div>
       {/* Contest context bar */}
-      <div className="bg-white border-b border-gray-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-6">
+      <div className="bg-card border-b border-border -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-6">
         {/* Breadcrumb + contest info */}
         <div className="py-3">
-          <nav className="flex items-center text-sm text-gray-500 mb-1">
-            <Link href="/contests" className="hover:text-blue-600">Contests</Link>
-            <svg className="w-4 h-4 mx-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <nav className="flex items-center text-sm text-muted-foreground mb-1">
+            <Link href="/contests" className="hover:text-primary">Contests</Link>
+            <svg className="w-4 h-4 mx-1 text-muted-foreground/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            <span className="text-gray-700 font-medium truncate max-w-md">
+            <span className="text-foreground font-medium truncate max-w-md">
               {isLoading ? '...' : contest?.title || `Contest #${contestId}`}
             </span>
           </nav>
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-gray-900 truncate">
+            <h1 className="text-lg font-bold text-foreground truncate">
               {isLoading ? <Spinner /> : contest?.title}
             </h1>
             {contest && (
               <>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-muted-foreground">
                   {CONTEST_TYPES[contest.contest_type] || contest.contest_type}
                 </span>
                 {status && (
-                  <Badge color={(STATUS_BADGE[status] || 'neutral') as 'success' | 'warning' | 'danger' | 'info' | 'neutral'}>{status}</Badge>
+                  <Badge variant={STATUS_BADGE_VARIANT[status] || 'secondary'}>{status}</Badge>
                 )}
               </>
             )}
@@ -104,8 +104,8 @@ export default function ContestLayout({ children }: { children: React.ReactNode 
                 className={cn(
                   'px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap transition-colors',
                   isActive
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                 )}
               >
                 {tab.label}

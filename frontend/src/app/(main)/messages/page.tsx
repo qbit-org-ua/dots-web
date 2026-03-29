@@ -28,8 +28,8 @@ export default function MessagesPage() {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">Please sign in to view messages.</p>
-        <Link href="/login" className="text-blue-600 hover:underline">Sign In</Link>
+        <p className="text-muted-foreground mb-4">Please sign in to view messages.</p>
+        <Link href="/login" className="text-primary hover:underline">Sign In</Link>
       </div>
     );
   }
@@ -39,19 +39,19 @@ export default function MessagesPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+        <h1 className="text-2xl font-bold text-foreground">Messages</h1>
         <Link href="/messages/compose">
           <Button size="sm">Compose</Button>
         </Link>
       </div>
 
-      <div className="flex gap-1 border-b border-gray-200">
+      <div className="flex gap-1 border-b border-border">
         <button
           onClick={() => setTab('inbox')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             tab === 'inbox'
-              ? 'text-blue-600 border-blue-600'
-              : 'text-gray-500 border-transparent hover:text-gray-700'
+              ? 'text-primary border-primary'
+              : 'text-muted-foreground border-transparent hover:text-foreground'
           }`}
         >
           Inbox
@@ -60,8 +60,8 @@ export default function MessagesPage() {
           onClick={() => setTab('sent')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             tab === 'sent'
-              ? 'text-blue-600 border-blue-600'
-              : 'text-gray-500 border-transparent hover:text-gray-700'
+              ? 'text-primary border-primary'
+              : 'text-muted-foreground border-transparent hover:text-foreground'
           }`}
         >
           Sent
@@ -71,9 +71,9 @@ export default function MessagesPage() {
       {isLoading ? (
         <Spinner />
       ) : messages.length === 0 ? (
-        <p className="text-gray-500 py-8 text-center">No messages.</p>
+        <p className="text-muted-foreground py-8 text-center">No messages.</p>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -85,18 +85,18 @@ export default function MessagesPage() {
             </TableHeader>
             <TableBody>
               {messages.map((m) => (
-                <TableRow key={m.message_id} className={m.message_state ? '' : 'bg-blue-50'}>
+                <TableRow key={m.message_id} className={m.message_state ? '' : 'bg-primary/5'}>
                   <TableCell className="font-medium">
                     {tab === 'inbox' ? m.from_nickname || m.from_user_id : m.to_nickname || m.to_user_id}
                   </TableCell>
                   <TableCell>
-                    <Link href={`/messages/${m.message_id}`} className="text-blue-600 hover:underline">
+                    <Link href={`/messages/${m.message_id}`} className="text-primary hover:underline">
                       {m.message_subj || '(no subject)'}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-gray-500">{formatDateTime(m.message_date)}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDateTime(m.message_date)}</TableCell>
                   <TableCell>
-                    {!m.message_state && <Badge color="info">New</Badge>}
+                    {!m.message_state && <Badge variant="outline">New</Badge>}
                   </TableCell>
                 </TableRow>
               ))}

@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 import type { StandingsData, ProblemScore } from '@/types';
 
 function scoreColor(score: number, maxScore: number) {
-  if (score >= maxScore && maxScore > 0) return 'bg-green-100 text-green-800';
-  if (score > 0) return 'bg-yellow-100 text-yellow-800';
+  if (score >= maxScore && maxScore > 0) return 'bg-green-500/15 text-green-700 dark:text-green-300';
+  if (score > 0) return 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-300';
   return '';
 }
 
@@ -16,30 +16,30 @@ export function ClassicStandings({ data }: { data: StandingsData }) {
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="bg-gray-50 border-b">
-            <th className="px-3 py-2 text-left font-medium text-gray-500 w-12">#</th>
-            <th className="px-3 py-2 text-left font-medium text-gray-500">Participant</th>
+          <tr className="bg-muted border-b border-border">
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground w-12">#</th>
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Participant</th>
             {data.problems.map((p) => (
-              <th key={p.problem_id} className="px-3 py-2 text-center font-medium text-gray-500 min-w-[60px]" title={p.title}>
+              <th key={p.problem_id} className="px-3 py-2 text-center font-medium text-muted-foreground min-w-[60px]" title={p.title}>
                 {p.short_name}
               </th>
             ))}
-            <th className="px-3 py-2 text-center font-medium text-gray-500">Total</th>
+            <th className="px-3 py-2 text-center font-medium text-muted-foreground">Total</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-border">
           {data.users.map((user) => (
-            <tr key={user.user_id} className="hover:bg-gray-50">
-              <td className="px-3 py-2 text-gray-600 font-medium">{user.place}</td>
+            <tr key={user.user_id} className="hover:bg-muted/50">
+              <td className="px-3 py-2 text-muted-foreground font-medium">{user.place}</td>
               <td className="px-3 py-2">
-                <Link href={`/users/${user.user_id}`} className="text-blue-600 hover:underline font-medium">
+                <Link href={`/users/${user.user_id}`} className="text-primary hover:underline font-medium">
                   {user.nickname}
                 </Link>
-                {user.fio && <span className="text-gray-400 text-xs ml-2">{user.fio}</span>}
+                {user.fio && <span className="text-muted-foreground/70 text-xs ml-2">{user.fio}</span>}
               </td>
               {user.scores.map((ps: ProblemScore, idx: number) => {
                 const score = parseFloat(ps.score) || 0;
-                const maxScore = 100; // default max
+                const maxScore = 100;
                 return (
                   <td
                     key={idx}
@@ -55,7 +55,7 @@ export function ClassicStandings({ data }: { data: StandingsData }) {
         </tbody>
         {data.summary && data.summary.length > 0 && (
           <tfoot>
-            <tr className="bg-gray-50 border-t text-xs text-gray-500">
+            <tr className="bg-muted border-t border-border text-xs text-muted-foreground">
               <td className="px-3 py-1" colSpan={2}>Tried / Solved</td>
               {data.summary.map((s, idx) => (
                 <td key={idx} className="px-3 py-1 text-center">
