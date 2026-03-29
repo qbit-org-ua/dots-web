@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -16,26 +17,24 @@ import type { Solution } from '@/types';
 
 function SolutionsTableSkeleton() {
   return (
-    <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+    <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>#</TableHead>
+            <TableHead className="w-12"><Skeleton className="h-4 w-8" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-32" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-12" /></TableHead>
             <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-            <TableHead className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-24" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {Array.from({ length: 8 }).map((_, i) => (
             <TableRow key={i}>
               <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-12" /></TableCell>
               <TableCell><Skeleton className="h-5 w-20 rounded" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="h-4 w-8 ml-auto" /></TableCell>
               <TableCell><Skeleton className="h-4 w-28" /></TableCell>
             </TableRow>
           ))}
@@ -48,6 +47,7 @@ function SolutionsTableSkeleton() {
 export default function SolutionsPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const problemId = searchParams.get('problem_id');
@@ -90,9 +90,7 @@ export default function SolutionsPage() {
           <FileCode className="size-12 mx-auto text-muted-foreground/50" />
           <p className="text-muted-foreground text-lg">{t('solutions.noSolutions')}</p>
           <p className="text-muted-foreground text-sm">
-            {problemId
-              ? t('solutions.noSolutionsProblem')
-              : t('solutions.noSolutionsGeneral')}
+            {problemId ? t('solutions.noSolutionsProblem') : t('solutions.noSolutionsGeneral')}
           </p>
           <Link href="/contests" className="inline-block mt-2 text-sm text-primary hover:underline">
             {t('solutions.browseContests')}
@@ -100,39 +98,52 @@ export default function SolutionsPage() {
         </div>
       ) : (
         <>
-          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+          <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <div className="overflow-x-auto relative">
               <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>#</TableHead>
+                    <TableHead className="w-12">#</TableHead>
                     <TableHead>{t('solutions.tableProblem')}</TableHead>
-                    <TableHead>{t('solutions.tableLanguage')}</TableHead>
-                    <TableHead>{t('solutions.tableResult')}</TableHead>
                     <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
-                    <TableHead>{t('solutions.tableTime')}</TableHead>
+                    <TableHead>{t('solutions.tableResult')}</TableHead>
+                    <TableHead>{t('solutions.tablePosted')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {solutions.map((s) => (
-                    <TableRow key={s.solution_id}>
-                      <TableCell>
-                        <Link href={`/solutions/${s.solution_id}`} className="text-primary hover:underline">
-                          {s.solution_id}
-                        </Link>
+                    <TableRow
+                      key={s.solution_id}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        const cid = s.contest_id;
+                        if (cid) {
+                          router.push(`/contests/${cid}/solutions/${s.solution_id}`);
+                        } else {
+                          router.push(`/solutions/${s.solution_id}`);
+                        }
+                      }}
+                    >
+                      <TableCell className="text-muted-foreground font-mono text-xs">
+                        {s.solution_id}
                       </TableCell>
                       <TableCell>
-                        <Link href={`/problems/${s.problem_id}`} className="text-primary hover:underline">
-                          {s.problem_title || s.problem_id}
+                        <Link
+                          href={s.contest_id ? `/contests/${s.contest_id}/problems/${s.problem_id}` : `/problems/${s.problem_id}`}
+                          className="text-primary hover:underline font-medium"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {s.short_name ? `${s.short_name}: ` : ''}{s.problem_title || `#${s.problem_id}`}
                         </Link>
                       </TableCell>
-                      <TableCell>{s.language_name || s.language_id}</TableCell>
+                      <TableCell className="text-right font-mono">{s.test_score}</TableCell>
                       <TableCell>
                         <VerdictBadge result={s.test_result} full />
                       </TableCell>
-                      <TableCell className="text-right">{s.test_score}</TableCell>
-                      <TableCell className="text-muted-foreground">{formatDateTime(s.posted_time)}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {formatDateTime(s.posted_time)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

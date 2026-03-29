@@ -16,7 +16,7 @@ import type { Message } from '@/types';
 
 function MessageTableSkeleton() {
   return (
-    <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+    <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -122,7 +122,7 @@ export default function MessagesPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+        <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
           <div className="overflow-x-auto relative">
             <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
             <Table>

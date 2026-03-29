@@ -79,7 +79,7 @@ export default function AdminSolutionsPage() {
       ) : (
         <>
           <p className="text-sm text-muted-foreground">{total} {t('admin.solutionsTotal')}</p>
-          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+          <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>

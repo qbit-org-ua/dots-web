@@ -15,7 +15,7 @@ import type { Problem } from '@/types';
 
 function ProblemsTableSkeleton() {
   return (
-    <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+    <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -97,7 +97,7 @@ export default function ProblemsPage() {
         </div>
       ) : (
         <>
-          <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+          <div className="bg-muted rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
