@@ -1,15 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, formatDuration } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import {
   Carousel,
   CarouselContent,
@@ -17,41 +16,116 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from '@/components/ui/carousel';
-import { Trophy, Clock, Archive, Users, Calendar } from 'lucide-react';
+import { Trophy, Clock, Archive, Users } from 'lucide-react';
 import type { Contest } from '@/types';
 
-function ContestCard({ contest, t, isRegistered }: { contest: Contest; t: (k: string) => string; isRegistered: boolean }) {
+function LiveDot() {
   return (
-    <Link href={`/contests/${contest.contest_id}`}>
-      <div className="h-full rounded-xl bg-card text-card-foreground shadow-sm border border-foreground/15 hover:border-foreground/25 hover:shadow-md transition-all cursor-pointer">
-        <div className="p-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
-              {contest.title}
-            </h3>
+    <span className="relative flex size-2">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+      <span className="relative inline-flex size-2 rounded-full bg-green-500" />
+    </span>
+  );
+}
+
+function ContestCard({ contest, t, isRegistered, status }: {
+  contest: Contest;
+  t: (k: string) => string;
+  isRegistered: boolean;
+  status: 'live' | 'upcoming' | 'archived';
+}) {
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    if (status !== 'live') return;
+    const id = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [status]);
+
+  const remaining = contest.start_time > now ? contest.start_time - now : 0;
+
+  return (
+    <Link href={`/contests/${contest.contest_id}`} className="block h-full">
+      <article className={cn(
+        'rounded-xl p-5 transition-all group flex flex-col justify-between h-full relative overflow-hidden',
+        status === 'live'
+          ? 'bg-muted/80 hover:bg-muted border border-primary/20 hover:border-primary/40'
+          : 'bg-muted/50 hover:bg-muted border border-border hover:border-foreground/20',
+      )}>
+        {status === 'live' && (
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
+        )}
+
+        <div>
+          {/* Status + participants */}
+          <div className="flex justify-between items-start mb-4">
+            {status === 'live' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 text-[10px] font-bold tracking-widest uppercase">
+                <LiveDot />
+                {t('contests.liveNow')}
+              </span>
+            ) : status === 'upcoming' ? (
+              <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold tracking-widest uppercase">
+                {remaining > 86400
+                  ? t('contests.startsIn') + ' ' + Math.floor(remaining / 86400) + t('contests.days')
+                  : remaining > 3600
+                    ? t('contests.startsIn') + ' ' + Math.floor(remaining / 3600) + t('contests.hours')
+                    : t('contests.upcoming')}
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
+                {t('status.Finished')}
+              </span>
+            )}
+            <div className="flex items-center gap-1 text-muted-foreground text-[10px]">
+              <Users className="size-3.5" />
+              {contest.user_count}
+            </div>
+          </div>
+
+          {/* Title */}
+          <h2 className="font-semibold text-foreground text-base mb-2 group-hover:text-primary transition-colors leading-tight line-clamp-2">
+            {contest.title}
+          </h2>
+
+          {/* Type tag */}
+          <div className="flex flex-wrap gap-1.5 mb-5">
+            <span className="px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-[10px] font-semibold border border-border">
+              {t('contestType.' + contest.contest_type)}
+            </span>
             {isRegistered && (
-              <Badge variant="default" className="shrink-0 text-xs">
+              <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-semibold">
                 {t('contests.registered')}
-              </Badge>
+              </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Badge variant="outline" className="font-normal text-xs">
-              {t('contestType.' + contest.contest_type)}
-            </Badge>
+        </div>
+
+        {/* Footer stats */}
+        <div className="grid grid-cols-2 gap-4 border-t border-border/50 pt-4">
+          <div>
+            <p className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">{t('contests.start')}</p>
+            <p className="text-xs font-bold text-foreground">{formatDateTime(contest.start_time)}</p>
           </div>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="size-3" />
-              {formatDateTime(contest.start_time)}
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="size-3" />
-              {contest.user_count}
-            </span>
+          <div>
+            {status === 'live' ? (
+              <>
+                <p className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">{t('contests.status')}</p>
+                <p className="text-xs font-bold text-green-600 dark:text-green-400">{t('status.Going')}</p>
+              </>
+            ) : isRegistered ? (
+              <>
+                <p className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">{t('contests.yourStatus')}</p>
+                <p className="text-xs font-bold text-primary">{t('contests.registered')}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">{t('contests.type')}</p>
+                <p className="text-xs font-bold text-foreground">{t('contestType.' + contest.contest_type)}</p>
+              </>
+            )}
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
@@ -60,17 +134,25 @@ function SectionSkeleton() {
   return (
     <div className="flex gap-4 overflow-hidden">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex-[0_0_300px] min-w-0">
-          <Card>
-            <CardContent className="p-4 space-y-3">
-              <Skeleton className="h-5 w-3/4" />
-              <Skeleton className="h-4 w-20" />
-              <div className="flex gap-4">
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-3 w-12" />
+        <div key={i} className="flex-[0_0_320px] min-w-0">
+          <div className="rounded-xl bg-muted/50 border border-border p-5 space-y-4">
+            <div className="flex justify-between">
+              <Skeleton className="h-4 w-16 rounded-full" />
+              <Skeleton className="h-3 w-8" />
+            </div>
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-20 rounded-md" />
+            <div className="grid grid-cols-2 gap-4 border-t border-border/50 pt-4">
+              <div className="space-y-1">
+                <Skeleton className="h-2 w-12" />
+                <Skeleton className="h-3 w-24" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-1">
+                <Skeleton className="h-2 w-10" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+          </div>
         </div>
       ))}
     </div>
@@ -83,12 +165,14 @@ function ContestSection({
   contests,
   t,
   emptyMessage,
+  status,
 }: {
   icon: React.ReactNode;
   title: string;
   contests: Contest[];
   t: (k: string) => string;
   emptyMessage: string;
+  status: 'live' | 'upcoming' | 'archived';
 }) {
   if (contests.length === 0) {
     return (
@@ -121,11 +205,12 @@ function ContestSection({
       <Carousel opts={{ align: 'start', dragFree: true }}>
         <CarouselContent className="-ml-4">
           {sorted.map((c) => (
-            <CarouselItem key={c.contest_id} className="pl-4 basis-[300px]">
+            <CarouselItem key={c.contest_id} className="pl-4 basis-[320px]">
               <ContestCard
                 contest={c}
                 t={t}
                 isRegistered={c.reg_status !== null && c.reg_status !== undefined}
+                status={status}
               />
             </CarouselItem>
           ))}
@@ -140,6 +225,8 @@ function ContestSection({
     </section>
   );
 }
+
+import { cn } from '@/lib/utils';
 
 export default function ContestsPage() {
   const { t } = useTranslation();
@@ -160,11 +247,11 @@ export default function ContestsPage() {
   const archived = contests.filter((c) => c.status === 'Finished' || c.status === 'FinishedFrozen');
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <h1 className="text-2xl font-bold text-foreground">{t('contests.title')}</h1>
 
       {isLoading ? (
-        <div className="space-y-8">
+        <div className="space-y-10">
           <div className="space-y-3">
             <Skeleton className="h-6 w-40" />
             <SectionSkeleton />
@@ -188,6 +275,7 @@ export default function ContestsPage() {
             contests={inProgress}
             t={t}
             emptyMessage={t('contests.noInProgress')}
+            status="live"
           />
           <ContestSection
             icon={<Clock className="size-5 text-yellow-600" />}
@@ -195,6 +283,7 @@ export default function ContestsPage() {
             contests={upcoming}
             t={t}
             emptyMessage={t('contests.noUpcoming')}
+            status="upcoming"
           />
           <ContestSection
             icon={<Archive className="size-5 text-muted-foreground" />}
@@ -202,6 +291,7 @@ export default function ContestsPage() {
             contests={archived}
             t={t}
             emptyMessage={t('contests.noArchived')}
+            status="archived"
           />
         </>
       )}
