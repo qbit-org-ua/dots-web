@@ -55,13 +55,26 @@ export default function UserProfilePage() {
   const { user: currentUser } = useAuth();
   const { t } = useTranslation();
 
+  // ACCESS_READ_PROFILES (0x0004) - teachers/admins, or own profile
+  const canView = currentUser && (Number(currentUser.user_id) === Number(userId) || (currentUser.access & 0x0004) !== 0);
+
   const { data, isLoading } = useQuery({
     queryKey: ['user', userId],
     queryFn: async () => {
       const res = await api.get(`/api/v1/users/${userId}`);
       return res.data;
     },
+    enabled: !!canView,
   });
+
+  if (!canView) {
+    return (
+      <div className="text-center py-16 space-y-3">
+        <div className="text-4xl">🔒</div>
+        <p className="text-muted-foreground text-lg">{t('common.accessDenied')}</p>
+      </div>
+    );
+  }
 
   if (isLoading) return <UserProfileSkeleton />;
 

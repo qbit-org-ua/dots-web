@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { formatDate } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,9 +39,20 @@ function ProblemDetailSkeleton() {
 export default function ProblemDetailPage() {
   const params = useParams();
   const problemId = params.problemId as string;
+  const { user } = useAuth();
   const { t } = useTranslation();
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const contestId = searchParams.get('contest_id');
+
+  // Standalone problem view requires ACCESS_WRITE_PROBLEMS (0x0100)
+  if (!user || !(user.access & 0x0100)) {
+    return (
+      <div className="text-center py-16 space-y-3">
+        <div className="text-4xl">🔒</div>
+        <p className="text-muted-foreground text-lg">{t('common.accessDenied')}</p>
+      </div>
+    );
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['problem', problemId],

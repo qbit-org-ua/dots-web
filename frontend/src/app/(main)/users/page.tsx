@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { formatDateTime } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -41,9 +42,20 @@ function UsersTableSkeleton() {
 }
 
 export default function UsersPage() {
+  const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const { t } = useTranslation();
+
+  // ACCESS_READ_PROFILES (0x0004) - teachers and admins only
+  if (!user || !(user.access & 0x0004)) {
+    return (
+      <div className="text-center py-16 space-y-3">
+        <div className="text-4xl">🔒</div>
+        <p className="text-muted-foreground text-lg">{t('common.accessDenied')}</p>
+      </div>
+    );
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['users', page, search],

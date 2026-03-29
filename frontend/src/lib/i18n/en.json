@@ -404,6 +404,7 @@
     "edit": "Edit",
     "create": "Create",
     "close": "Close",
+    "accessDenied": "Access denied",
     "show": "Show",
     "hide": "Hide",
     "switchTheme": "Switch to",
