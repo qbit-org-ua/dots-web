@@ -85,18 +85,18 @@ export default function MessagesPage() {
             </TableHeader>
             <TableBody>
               {messages.map((m) => (
-                <TableRow key={m.message_id} className={m.is_read ? '' : 'bg-blue-50'}>
+                <TableRow key={m.message_id} className={m.message_state ? '' : 'bg-blue-50'}>
                   <TableCell className="font-medium">
                     {tab === 'inbox' ? m.from_nickname || m.from_user_id : m.to_nickname || m.to_user_id}
                   </TableCell>
                   <TableCell>
                     <Link href={`/messages/${m.message_id}`} className="text-blue-600 hover:underline">
-                      {m.subject || '(no subject)'}
+                      {m.message_subj || '(no subject)'}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-gray-500">{formatDateTime(m.posted_time)}</TableCell>
+                  <TableCell className="text-gray-500">{formatDateTime(m.message_date)}</TableCell>
                   <TableCell>
-                    {!m.is_read && <Badge color="info">New</Badge>}
+                    {!m.message_state && <Badge color="info">New</Badge>}
                   </TableCell>
                 </TableRow>
               ))}

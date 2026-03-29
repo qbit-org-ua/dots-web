@@ -43,6 +43,8 @@ export interface UserProfile {
   o_cert: string;
 }
 
+export type UserFull = UserProfile;
+
 export interface Contest {
   contest_id: number;
   title: string;

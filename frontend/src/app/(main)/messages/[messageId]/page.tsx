@@ -45,7 +45,7 @@ export default function MessageDetailPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{message.subject || '(no subject)'}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{message.message_subj || '(no subject)'}</h1>
         <Link href="/messages" className="text-sm text-blue-600 hover:underline">
           Back to Messages
         </Link>
@@ -71,17 +71,17 @@ export default function MessageDetailPage() {
           </div>
           <div>
             <dt className="text-gray-500">Date</dt>
-            <dd>{formatDateTime(message.posted_time)}</dd>
+            <dd>{formatDateTime(message.message_date)}</dd>
           </div>
         </dl>
 
         <div className="border-t border-gray-200 pt-4">
-          <div className="prose max-w-none whitespace-pre-wrap text-sm">{message.text}</div>
+          <div className="prose max-w-none whitespace-pre-wrap text-sm">{message.message_text}</div>
         </div>
       </Card>
 
       {message.from_user_id !== user.user_id && (
-        <Link href={`/messages/compose?to=${message.from_nickname || message.from_user_id}&subject=Re: ${message.subject || ''}`}>
+        <Link href={`/messages/compose?to=${message.from_nickname || message.from_user_id}&subject=Re: ${message.message_subj || ''}`}>
           <Button variant="secondary">Reply</Button>
         </Link>
       )}

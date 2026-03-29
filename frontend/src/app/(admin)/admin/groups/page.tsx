@@ -63,8 +63,8 @@ export default function AdminGroupsPage() {
 
   const openEdit = (group: Group) => {
     setEditGroup(group);
-    setName(group.name);
-    setDescription(group.description);
+    setName(group.group_name);
+    setDescription(group.group_description || '');
     setShowModal(true);
   };
 
@@ -92,8 +92,8 @@ export default function AdminGroupsPage() {
               {groups.map((g) => (
                 <TableRow key={g.group_id}>
                   <TableCell>{g.group_id}</TableCell>
-                  <TableCell className="font-medium">{g.name}</TableCell>
-                  <TableCell className="text-gray-500">{g.description}</TableCell>
+                  <TableCell className="font-medium">{g.group_name}</TableCell>
+                  <TableCell className="text-gray-500">{g.group_description}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button size="sm" variant="ghost" onClick={() => openEdit(g)}>Edit</Button>

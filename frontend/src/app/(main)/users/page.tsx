@@ -71,11 +71,11 @@ export default function UsersPage() {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      {[u.last_name, u.first_name].filter(Boolean).join(' ') || '-'}
+                      {u.fio || '-'}
                     </TableCell>
-                    <TableCell>{u.city || '-'}</TableCell>
+                    <TableCell>{u.city_name || '-'}</TableCell>
                     <TableCell className="text-gray-500">
-                      {u.last_login_time ? formatDateTime(u.last_login_time) : '-'}
+                      {u.lastlogin ? formatDateTime(u.lastlogin) : '-'}
                     </TableCell>
                   </TableRow>
                 ))}

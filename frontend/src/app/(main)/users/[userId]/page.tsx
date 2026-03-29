@@ -29,8 +29,6 @@ export default function UserProfilePage() {
     return <p className="text-center py-8 text-gray-500">User not found.</p>;
   }
 
-  const fullName = [user.last_name, user.first_name, user.patronymic].filter(Boolean).join(' ');
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -56,7 +54,7 @@ export default function UserProfilePage() {
                 </div>
               )}
               <h2 className="text-xl font-semibold">{user.nickname}</h2>
-              {fullName && <p className="text-gray-500 mt-1">{fullName}</p>}
+              {user.fio && <p className="text-gray-500 mt-1">{user.fio}</p>}
             </div>
           </Card>
         </div>
@@ -68,37 +66,43 @@ export default function UserProfilePage() {
                 <dt className="text-gray-500">Email</dt>
                 <dd className="font-medium">{user.email}</dd>
               </div>
-              {user.city && (
+              {user.city_name && (
                 <div>
                   <dt className="text-gray-500">City</dt>
-                  <dd className="font-medium">{user.city}</dd>
+                  <dd className="font-medium">{user.city_name}</dd>
                 </div>
               )}
-              {user.region && (
+              {user.region_name && (
                 <div>
                   <dt className="text-gray-500">Region</dt>
-                  <dd className="font-medium">{user.region}</dd>
+                  <dd className="font-medium">{user.region_name}</dd>
                 </div>
               )}
-              {user.institution && (
+              {user.u_institution_name && (
                 <div>
                   <dt className="text-gray-500">Institution</dt>
-                  <dd className="font-medium">{user.institution}</dd>
+                  <dd className="font-medium">{user.u_institution_name}</dd>
                 </div>
               )}
-              {user.specialty && (
+              {user.u_specialty && (
                 <div>
                   <dt className="text-gray-500">Specialty</dt>
-                  <dd className="font-medium">{user.specialty}</dd>
+                  <dd className="font-medium">{user.u_specialty}</dd>
+                </div>
+              )}
+              {user.job && (
+                <div>
+                  <dt className="text-gray-500">Job</dt>
+                  <dd className="font-medium">{user.job}</dd>
                 </div>
               )}
               <div>
                 <dt className="text-gray-500">Registered</dt>
-                <dd className="font-medium">{formatDate(user.registered_time)}</dd>
+                <dd className="font-medium">{user.created ? formatDate(user.created) : '-'}</dd>
               </div>
               <div>
                 <dt className="text-gray-500">Last Login</dt>
-                <dd className="font-medium">{user.last_login_time ? formatDateTime(user.last_login_time) : '-'}</dd>
+                <dd className="font-medium">{user.lastlogin ? formatDateTime(user.lastlogin) : '-'}</dd>
               </div>
             </dl>
           </Card>
