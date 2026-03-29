@@ -206,7 +206,7 @@ export default function ContestSolutionDetailPage() {
           <ExternalLink className="size-3.5" />
           {t('solutions.allForProblem')}
         </Link>
-        <Link href={`/contests/${contestId}/submit`} className="text-primary hover:underline flex items-center gap-1">
+        <Link href={`/contests/${contestId}/submit?problem=${solution.problem_id}&lang=${solution.lang_id}`} className="text-primary hover:underline flex items-center gap-1">
           <FileCode className="size-3.5" />
           {t('solutions.submitAnother')}
         </Link>

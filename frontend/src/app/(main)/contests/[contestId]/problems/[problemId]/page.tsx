@@ -83,7 +83,7 @@ export default function ContestProblemDetailPage() {
             <span>{t('problems.posted')}: {formatDate(problem.posted_time)}</span>
           </div>
         </div>
-        <Link href={`/contests/${contestId}/submit`}>
+        <Link href={`/contests/${contestId}/submit?problem=${problemId}`}>
           <Button size="sm" className="gap-1.5">
             <FileCode className="size-3.5" />
             {t('problems.submitSolution')}

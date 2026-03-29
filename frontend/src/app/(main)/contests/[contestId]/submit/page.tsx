@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useRef, useEffect } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -14,21 +14,26 @@ import { Label } from '@/components/ui/label';
 import { FormSelect } from '@/components/ui/form-field';
 import { CodeEditor, getMonacoLanguage } from '@/components/code-editor';
 import { Loader2, Send } from 'lucide-react';
-import type { ContestProblem, Language } from '@/types';
+import type { ContestProblem, Language, Solution } from '@/types';
 
 export default function ContestSubmitPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const contestId = params.contestId as string;
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  const [problemId, setProblemId] = useState('');
-  const [languageId, setLanguageId] = useState('');
+  const preselectedProblem = searchParams.get('problem') || '';
+  const preselectedLang = searchParams.get('lang') || '';
+
+  const [problemId, setProblemId] = useState(preselectedProblem);
+  const [languageId, setLanguageId] = useState(preselectedLang);
   const [source, setSource] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [preselectApplied, setPreselectApplied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: problemsData, isLoading: problemsLoading } = useQuery({
@@ -47,8 +52,44 @@ export default function ContestSubmitPage() {
     },
   });
 
+  // Fetch user's recent solutions in this contest to detect last used language
+  const { data: solutionsData } = useQuery({
+    queryKey: ['contest-solutions-preselect', contestId],
+    queryFn: async () => {
+      const res = await api.get(`/api/v1/contests/${contestId}/solutions`, {
+        params: { per_page: 50 },
+      });
+      return res.data;
+    },
+    enabled: !!user && !preselectedLang,
+  });
+
   const problems: ContestProblem[] = problemsData?.problems ?? [];
   const languages: Language[] = languagesData?.languages ?? [];
+  const userSolutions: Solution[] = solutionsData?.solutions ?? [];
+
+  // Auto-select language from previous solutions
+  useEffect(() => {
+    if (preselectApplied || languageId || !userSolutions.length) return;
+
+    // If a problem is preselected, find the last solution for that problem
+    if (problemId) {
+      const forProblem = userSolutions.find(
+        (s) => String(s.problem_id) === problemId
+      );
+      if (forProblem) {
+        setLanguageId(String(forProblem.lang_id));
+        setPreselectApplied(true);
+        return;
+      }
+    }
+
+    // Otherwise, use the most recent solution's language (solutions are ordered by posted_time DESC)
+    if (userSolutions[0]) {
+      setLanguageId(String(userSolutions[0].lang_id));
+      setPreselectApplied(true);
+    }
+  }, [problemId, userSolutions, languageId, preselectApplied]);
 
   if (!user) {
     return (
@@ -67,24 +108,6 @@ export default function ContestSubmitPage() {
       <Skeleton className="h-10 w-24 rounded-lg" />
     </div>
   );
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0] ?? null;
-    setFile(selected);
-    if (selected) {
-      setSource('');
-    }
-  };
-
-  const handleSourceChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setSource(e.target.value);
-    if (e.target.value.trim()) {
-      setFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,7 +204,11 @@ export default function ContestSubmitPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                onChange={handleFileChange}
+                onChange={(e) => {
+                  const selected = e.target.files?.[0] ?? null;
+                  setFile(selected);
+                  if (selected) setSource('');
+                }}
                 className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
               />
               {file && (
