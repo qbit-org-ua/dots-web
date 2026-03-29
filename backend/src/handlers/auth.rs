@@ -53,31 +53,36 @@ pub async fn login(
     headers: axum::http::HeaderMap,
     Json(req): Json<LoginRequest>,
 ) -> AppResult<Response> {
-    // Look up user by email
-    let user: Option<User> = sqlx::query_as(
-        "SELECT user_id, email, nickname, access, messages, is_activated \
-         FROM labs_users WHERE email = ?"
-    )
-    .bind(&req.login)
-    .fetch_optional(&state.pool)
-    .await?;
+    // Look up user by email or nickname (matching PHP user_info() logic)
+    let is_email = req.login.contains('@') && req.login.contains('.');
+    let row: Option<(u32, String, String, u32, i32, i8, String)> = if is_email {
+        sqlx::query_as(
+            "SELECT user_id, email, nickname, access, messages, is_activated, password \
+             FROM labs_users WHERE email = ? LIMIT 1"
+        )
+        .bind(&req.login)
+        .fetch_optional(&state.pool)
+        .await?
+    } else {
+        sqlx::query_as(
+            "SELECT user_id, email, nickname, access, messages, is_activated, password \
+             FROM labs_users WHERE nickname = ? LIMIT 1"
+        )
+        .bind(&req.login)
+        .fetch_optional(&state.pool)
+        .await?
+    };
 
-    let user = user.ok_or(AppError::LoginFailed)?;
+    let (user_id, email, nickname, access, messages, is_activated, stored_hash) =
+        row.ok_or(AppError::LoginFailed)?;
 
-    // Verify password
-    let stored_hash: Option<(String,)> = sqlx::query_as(
-        "SELECT password FROM labs_users WHERE user_id = ?"
-    )
-    .bind(user.user_id)
-    .fetch_optional(&state.pool)
-    .await?;
-
-    let stored_hash = stored_hash.ok_or(AppError::LoginFailed)?.0;
-    let computed_hash = encrypt_password(&req.login, &req.password);
-
+    // Verify password: always hash against the email from DB (matching PHP behavior)
+    let computed_hash = encrypt_password(&email, &req.password);
     if stored_hash != computed_hash {
         return Err(AppError::LoginFailed);
     }
+
+    let user = User { user_id, email, nickname, access, messages, is_activated };
 
     // Create session
     let session_id = generate_session_id();
