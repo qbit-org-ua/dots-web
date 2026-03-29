@@ -8,9 +8,10 @@ import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { FormSelect, FormTextarea } from '@/components/ui/form-field';
+import { Loader2, Send } from 'lucide-react';
 import type { ContestProblem, Language } from '@/types';
 
 export default function ContestSubmitPage() {
@@ -55,7 +56,14 @@ export default function ContestSubmitPage() {
     );
   }
 
-  if (problemsLoading || languagesLoading) return <Spinner />;
+  if (problemsLoading || languagesLoading) return (
+    <div className="space-y-4">
+      <Skeleton className="h-10 w-full rounded-lg" />
+      <Skeleton className="h-10 w-full rounded-lg" />
+      <Skeleton className="h-48 w-full rounded-lg" />
+      <Skeleton className="h-10 w-24 rounded-lg" />
+    </div>
+  );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] ?? null;
@@ -166,8 +174,12 @@ export default function ContestSubmitPage() {
                 <p className="text-xs text-muted-foreground">Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)</p>
               )}
             </div>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Submitting...' : 'Submit'}
+            <Button type="submit" disabled={loading} className="gap-1.5">
+              {loading ? (
+                <><Loader2 className="size-4 animate-spin" />Submitting...</>
+              ) : (
+                <><Send className="size-4" />Submit</>
+              )}
             </Button>
           </form>
         </CardContent>

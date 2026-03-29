@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormInput, FormTextarea } from '@/components/ui/form-field';
+import { Loader2, Send } from 'lucide-react';
 
 export default function ComposeMessagePage() {
   const { user } = useAuth();
@@ -75,8 +76,12 @@ export default function ComposeMessagePage() {
               required
             />
             <div className="flex gap-3">
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Sending...' : 'Send Message'}
+              <Button type="submit" disabled={loading} className="gap-1.5">
+                {loading ? (
+                  <><Loader2 className="size-4 animate-spin" />Sending...</>
+                ) : (
+                  <><Send className="size-4" />Send Message</>
+                )}
               </Button>
               <Link href="/messages">
                 <Button type="button" variant="secondary">Cancel</Button>

@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
-import { Menu, User, LogOut, Settings, Mail } from 'lucide-react';
+import { Menu, User, LogOut, Settings, Mail, Code2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -37,7 +38,8 @@ export function Nav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-8">
-            <Link href="/" className="text-xl font-bold tracking-tight text-primary hover:text-primary/80">
+            <Link href="/" className="flex items-center gap-1.5 text-xl font-bold tracking-tight text-primary hover:text-primary/80">
+              <Code2 className="size-5" />
               DOTS
             </Link>
             <nav className="hidden md:flex items-center gap-1">
@@ -48,7 +50,7 @@ export function Nav() {
                   className={cn(
                     'px-3 py-2 rounded-md text-sm font-medium transition-colors',
                     pathname.startsWith(link.href)
-                      ? 'bg-muted text-foreground'
+                      ? 'bg-primary/10 text-primary font-semibold'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >

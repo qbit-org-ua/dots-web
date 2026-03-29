@@ -5,20 +5,54 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { formatDateTime } from '@/lib/utils';
-import { CONTEST_TYPES, STATUS_COLORS } from '@/lib/constants';
+import { CONTEST_TYPES } from '@/lib/constants';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from '@/components/ui/pagination';
 import type { Contest } from '@/types';
 
-const BADGE_VARIANT_MAP: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  success: 'default',
-  warning: 'secondary',
-  danger: 'destructive',
-  info: 'outline',
-  neutral: 'secondary',
-};
+function statusBadge(status: string) {
+  switch (status) {
+    case 'going':
+      return <Badge className="bg-green-600 text-white border-transparent">Going</Badge>;
+    case 'finished':
+      return <Badge variant="secondary">Finished</Badge>;
+    case 'wait':
+      return <Badge className="bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30">Waiting</Badge>;
+    default:
+      return <Badge variant="secondary">{status}</Badge>;
+  }
+}
+
+function ContestTableSkeleton() {
+  return (
+    <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Start Time</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Participants</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <TableRow key={i}>
+              <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+              <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-8 ml-auto" /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
 
 export default function ContestsPage() {
   const [page, setPage] = useState(1);
@@ -41,42 +75,49 @@ export default function ContestsPage() {
       <h1 className="text-2xl font-bold text-foreground">Contests</h1>
 
       {isLoading ? (
-        <Spinner />
+        <ContestTableSkeleton />
       ) : contests.length === 0 ? (
-        <p className="text-muted-foreground py-8 text-center">No contests found.</p>
+        <div className="text-center py-16 space-y-3">
+          <div className="text-4xl">🏆</div>
+          <p className="text-muted-foreground text-lg">No contests found</p>
+          <p className="text-muted-foreground text-sm">Check back later for upcoming contests.</p>
+        </div>
       ) : (
         <>
           <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Start Time</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Participants</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {contests.map((c) => (
-                  <TableRow key={c.contest_id}>
-                    <TableCell>
-                      <Link href={`/contests/${c.contest_id}`} className="text-primary hover:underline font-medium">
-                        {c.title}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{CONTEST_TYPES[c.contest_type] || c.contest_type}</TableCell>
-                    <TableCell>{formatDateTime(c.start_time)}</TableCell>
-                    <TableCell>
-                      <Badge variant={BADGE_VARIANT_MAP[STATUS_COLORS[c.status] || 'neutral'] || 'secondary'}>
-                        {c.status === 'going' ? 'Going' : c.status === 'finished' ? 'Finished' : c.status === 'wait' ? 'Waiting' : c.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{c.user_count}</TableCell>
+            <div className="overflow-x-auto relative">
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Start Time</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Participants</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {contests.map((c) => (
+                    <TableRow key={c.contest_id}>
+                      <TableCell>
+                        <Link href={`/contests/${c.contest_id}`} className="text-primary hover:underline font-medium">
+                          {c.title}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-normal">
+                          {CONTEST_TYPES[c.contest_type] || c.contest_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatDateTime(c.start_time)}</TableCell>
+                      <TableCell>{statusBadge(c.status)}</TableCell>
+                      <TableCell className="text-right">{c.user_count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>

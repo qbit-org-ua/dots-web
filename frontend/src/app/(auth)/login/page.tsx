@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FormInput } from '@/components/ui/form-field';
+import { Loader2, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -56,8 +57,12 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Signing in...' : 'Sign In'}
+          <Button type="submit" disabled={loading} className="w-full gap-1.5">
+            {loading ? (
+              <><Loader2 className="size-4 animate-spin" />Signing in...</>
+            ) : (
+              <><LogIn className="size-4" />Sign In</>
+            )}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}

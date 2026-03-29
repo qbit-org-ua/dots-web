@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { CONTEST_TYPES } from '@/lib/constants';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
 const STATUS_BADGE_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -78,7 +78,7 @@ export default function ContestLayout({ children }: { children: React.ReactNode 
           </nav>
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-bold text-foreground truncate">
-              {isLoading ? <Spinner /> : contest?.title}
+              {isLoading ? <Skeleton className="h-6 w-48 inline-block" /> : contest?.title}
             </h1>
             {contest && (
               <>

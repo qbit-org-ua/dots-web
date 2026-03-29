@@ -7,8 +7,9 @@ import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { FormInput } from '@/components/ui/form-field';
+import { Loader2, Save } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -52,7 +53,12 @@ export default function ProfilePage() {
     );
   }
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return (
+    <div className="space-y-6 max-w-2xl mx-auto">
+      <Skeleton className="h-8 w-40" />
+      <Skeleton className="h-96 w-full rounded-lg" />
+    </div>
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +68,7 @@ export default function ProfilePage() {
     try {
       await api.put(`/api/v1/users/${user.user_id}`, form);
       setSuccess('Profile updated successfully.');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || 'Update failed';
       setError(typeof msg === 'string' ? msg : 'Update failed');
@@ -112,8 +119,12 @@ export default function ProfilePage() {
             <FormInput label="School/Organization Name" value={form.o_full_name} onChange={handleChange('o_full_name')} />
             <FormInput label="Grade" value={form.o_grade} onChange={handleChange('o_grade')} />
 
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
+            <Button type="submit" disabled={loading} className="gap-1.5">
+              {loading ? (
+                <><Loader2 className="size-4 animate-spin" />Saving...</>
+              ) : (
+                <><Save className="size-4" />Save Changes</>
+              )}
             </Button>
           </form>
         </CardContent>

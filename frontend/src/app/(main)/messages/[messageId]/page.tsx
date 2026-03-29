@@ -8,8 +8,9 @@ import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { formatDateTime } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Reply, ArrowLeft } from 'lucide-react';
 import type { Message } from '@/types';
 
 export default function MessageDetailPage() {
@@ -35,18 +36,33 @@ export default function MessageDetailPage() {
     );
   }
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return (
+    <div className="space-y-6 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-28" />
+      </div>
+      <Skeleton className="h-48 w-full rounded-lg" />
+    </div>
+  );
 
   const message: Message = data?.message;
   if (!message) {
-    return <p className="text-center py-8 text-muted-foreground">Message not found.</p>;
+    return (
+      <div className="text-center py-16 space-y-3">
+        <div className="text-4xl">🔍</div>
+        <p className="text-muted-foreground text-lg">Message not found</p>
+        <p className="text-muted-foreground text-sm">This message may have been deleted.</p>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">{message.message_subj || '(no subject)'}</h1>
-        <Link href="/messages" className="text-sm text-primary hover:underline">
+        <Link href="/messages" className="text-sm text-primary hover:underline flex items-center gap-1">
+          <ArrowLeft className="size-3.5" />
           Back to Messages
         </Link>
       </div>
@@ -84,7 +100,10 @@ export default function MessageDetailPage() {
 
       {message.from_user_id !== user.user_id && (
         <Link href={`/messages/compose?to=${message.from_nickname || message.from_user_id}&subject=Re: ${message.message_subj || ''}`}>
-          <Button variant="secondary">Reply</Button>
+          <Button variant="secondary" className="gap-1.5">
+            <Reply className="size-4" />
+            Reply
+          </Button>
         </Link>
       )}
     </div>

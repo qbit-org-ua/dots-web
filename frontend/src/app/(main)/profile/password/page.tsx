@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormInput } from '@/components/ui/form-field';
+import { Loader2, KeyRound } from 'lucide-react';
 
 export default function ChangePasswordPage() {
   const { user } = useAuth();
@@ -47,6 +48,7 @@ export default function ChangePasswordPage() {
         new_password: newPassword,
       });
       setSuccess('Password changed successfully.');
+      setTimeout(() => setSuccess(''), 3000);
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -95,8 +97,12 @@ export default function ChangePasswordPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Changing...' : 'Change Password'}
+            <Button type="submit" disabled={loading} className="gap-1.5">
+              {loading ? (
+                <><Loader2 className="size-4 animate-spin" />Changing...</>
+              ) : (
+                <><KeyRound className="size-4" />Change Password</>
+              )}
             </Button>
           </form>
         </CardContent>

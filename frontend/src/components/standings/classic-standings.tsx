@@ -3,12 +3,20 @@
 import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { StandingsData, ProblemScore } from '@/types';
 
 function scoreColor(score: number, maxScore: number) {
   if (score >= maxScore && maxScore > 0) return 'bg-green-500/15 text-green-700 dark:text-green-300';
   if (score > 0) return 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-300';
   return '';
+}
+
+function RankCell({ place }: { place: number }) {
+  if (place === 1) return <span className="text-lg" title="1st place">🥇</span>;
+  if (place === 2) return <span className="text-lg" title="2nd place">🥈</span>;
+  if (place === 3) return <span className="text-lg" title="3rd place">🥉</span>;
+  return <span className="text-muted-foreground">{place}</span>;
 }
 
 export function ClassicStandings({ data }: { data: StandingsData }) {
@@ -30,7 +38,9 @@ export function ClassicStandings({ data }: { data: StandingsData }) {
         <tbody className="divide-y divide-border">
           {data.users.map((user) => (
             <tr key={user.user_id} className="hover:bg-muted/50">
-              <td className="px-3 py-2 text-muted-foreground font-medium">{user.place}</td>
+              <td className="px-3 py-2 font-medium text-center">
+                <RankCell place={user.place} />
+              </td>
               <td className="px-3 py-2">
                 <Link href={`/users/${user.user_id}`} className="text-primary hover:underline font-medium">
                   {user.nickname}
@@ -45,7 +55,16 @@ export function ClassicStandings({ data }: { data: StandingsData }) {
                     key={idx}
                     className={cn('px-3 py-2 text-center font-mono text-xs', scoreColor(score, maxScore))}
                   >
-                    {score > 0 ? ps.score : ps.is_solved ? '0' : ''}
+                    <Tooltip>
+                      <TooltipTrigger className="cursor-default w-full">
+                        {score > 0 ? ps.score : ps.is_solved ? '0' : ''}
+                      </TooltipTrigger>
+                      {score > 0 && (
+                        <TooltipContent>
+                          Score: {ps.score} / {maxScore}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
                   </td>
                 );
               })}
@@ -55,11 +74,15 @@ export function ClassicStandings({ data }: { data: StandingsData }) {
         </tbody>
         {data.summary && data.summary.length > 0 && (
           <tfoot>
-            <tr className="bg-muted border-t border-border text-xs text-muted-foreground">
-              <td className="px-3 py-1" colSpan={2}>Tried / Solved</td>
+            <tr className="bg-muted/70 border-t-2 border-border text-xs font-medium text-muted-foreground">
+              <td className="px-3 py-2" colSpan={2}>
+                <span className="font-semibold">Tried / Solved</span>
+              </td>
               {data.summary.map((s, idx) => (
-                <td key={idx} className="px-3 py-1 text-center">
-                  {s.tried} / {s.solved}
+                <td key={idx} className="px-3 py-2 text-center">
+                  <span className="text-muted-foreground">{s.tried}</span>
+                  <span className="text-muted-foreground/50 mx-0.5">/</span>
+                  <span className="text-green-600 dark:text-green-400 font-semibold">{s.solved}</span>
                 </td>
               ))}
               <td></td>

@@ -9,9 +9,35 @@ import { useAuth } from '@/lib/auth';
 import { formatDateTime, formatDuration, verdictCode, verdictColor } from '@/lib/utils';
 import { decodeVerdictFull, VERDICT_LABELS } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { FileCode, ExternalLink, ArrowLeft } from 'lucide-react';
 import type { Solution, TestResult } from '@/types';
+
+function testRowBg(code: string): string {
+  switch (code) {
+    case 'OK': return 'bg-green-500/5';
+    case 'WA': return 'bg-red-500/5';
+    case 'TL': case 'ML': return 'bg-orange-500/5';
+    case 'RE': return 'bg-purple-500/5';
+    case 'CE': return 'bg-yellow-500/5';
+    default: return '';
+  }
+}
+
+function SolutionDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <Skeleton className="h-64 w-full rounded-lg" />
+      <Skeleton className="h-48 w-full rounded-lg" />
+    </div>
+  );
+}
 
 export default function SolutionDetailPage() {
   const params = useParams();
@@ -29,14 +55,16 @@ export default function SolutionDetailPage() {
 
   if (!user) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">Please sign in to view this solution.</p>
-        <Link href="/login" className="text-primary hover:underline">Sign In</Link>
+      <div className="text-center py-16 space-y-3">
+        <div className="text-4xl">🔒</div>
+        <p className="text-muted-foreground text-lg">Sign in required</p>
+        <p className="text-muted-foreground text-sm">Please sign in to view solution details.</p>
+        <Link href="/login" className="inline-block mt-2 text-sm text-primary hover:underline">Sign In</Link>
       </div>
     );
   }
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return <SolutionDetailSkeleton />;
 
   const solution: Solution | undefined = data?.solution;
   const tests: TestResult[] = data?.tests ?? [];
@@ -46,23 +74,41 @@ export default function SolutionDetailPage() {
   const nickname: string = data?.nickname || '';
 
   if (!solution) {
-    return <p className="text-center py-8 text-muted-foreground">Solution not found.</p>;
+    return (
+      <div className="text-center py-16 space-y-3">
+        <div className="text-4xl">🔍</div>
+        <p className="text-muted-foreground text-lg">Solution not found</p>
+        <p className="text-muted-foreground text-sm">This solution may have been removed or you may not have access.</p>
+      </div>
+    );
   }
 
   const verdictStr = decodeVerdictFull(solution.test_result);
+  const overallCode = verdictCode(solution.test_result);
+  const overallColor = verdictColor(overallCode);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Solution #{solution.solution_id}</h1>
-        <Link href={solution.contest_id ? `/contests/${solution.contest_id}/solutions` : '/solutions'} className="text-sm text-primary hover:underline">
+        <Link href={solution.contest_id ? `/contests/${solution.contest_id}/solutions` : '/solutions'} className="text-sm text-primary hover:underline flex items-center gap-1">
+          <ArrowLeft className="size-3.5" />
           Back to Solutions
         </Link>
       </div>
 
+      {/* Result highlight */}
+      <div className="flex items-center gap-4 p-4 rounded-lg bg-card ring-1 ring-border">
+        <span className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm font-bold ${overallColor}`}>
+          {verdictStr}
+        </span>
+        <div className="text-2xl font-bold">{solution.test_score}</div>
+        <span className="text-muted-foreground text-sm">points</span>
+      </div>
+
       <Card>
-        <CardHeader>
-          <CardTitle>Solution Info</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Solution Info</CardTitle>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
@@ -114,42 +160,32 @@ export default function SolutionDetailPage() {
               <dt className="text-muted-foreground">Checked</dt>
               <dd>{solution.checked_time ? formatDateTime(solution.checked_time) : '-'}</dd>
             </div>
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">Result</dt>
-              <dd>
-                <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-bold ${verdictColor(verdictCode(solution.test_result))}`}>
-                  {verdictStr}
-                </span>
-              </dd>
-            </div>
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">Score</dt>
-              <dd className="font-bold text-lg">{solution.test_score}</dd>
-            </div>
           </dl>
         </CardContent>
       </Card>
 
-      <div className="flex gap-4 text-sm">
+      <div className="flex flex-wrap gap-3 text-sm">
         <Link
           href={solution.contest_id
             ? `/contests/${solution.contest_id}/solutions?problem_id=${solution.problem_id}`
             : `/solutions?problem_id=${solution.problem_id}`}
-          className="text-primary hover:underline"
+          className="text-primary hover:underline flex items-center gap-1"
         >
+          <ExternalLink className="size-3.5" />
           All my solutions for this problem
         </Link>
         {solution.contest_id && (
-          <Link href={`/contests/${solution.contest_id}/submit`} className="text-primary hover:underline">
-            Submit solution
+          <Link href={`/contests/${solution.contest_id}/submit`} className="text-primary hover:underline flex items-center gap-1">
+            <FileCode className="size-3.5" />
+            Submit another solution
           </Link>
         )}
       </div>
 
       {solution.compile_error && (
         <Card>
-          <CardHeader>
-            <CardTitle>Compilation Error</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-destructive">Compilation Error</CardTitle>
           </CardHeader>
           <CardContent>
             <pre className="text-sm text-red-700 dark:text-red-400 bg-red-500/10 p-4 rounded overflow-x-auto font-mono whitespace-pre-wrap">
@@ -161,11 +197,12 @@ export default function SolutionDetailPage() {
 
       {tests.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle>Test Results</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Test Results</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-hidden">
+            <div className="overflow-x-auto relative">
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -183,8 +220,8 @@ export default function SolutionDetailPage() {
                     const timeSec = t.test_time ? (t.test_time / 1000).toFixed(3) : '0.000';
                     const memKb = t.test_mem ? `${(t.test_mem / 1024).toFixed(1)}k` : '-';
                     return (
-                      <TableRow key={t.test_no}>
-                        <TableCell>{t.test_no}</TableCell>
+                      <TableRow key={t.test_no} className={testRowBg(code)}>
+                        <TableCell className="font-medium">{t.test_no}</TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${color}`}>
                             {VERDICT_LABELS[code] || code}

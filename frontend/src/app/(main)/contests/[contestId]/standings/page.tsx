@@ -1,13 +1,41 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ClassicStandings } from '@/components/standings/classic-standings';
 import { AcmStandings } from '@/components/standings/acm-standings';
 import type { StandingsData } from '@/types';
+
+function StandingsTableSkeleton() {
+  return (
+    <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+      <div className="p-1">
+        <div className="flex items-center gap-3 px-3 py-2 border-b border-border bg-muted">
+          <Skeleton className="h-4 w-8" />
+          <Skeleton className="h-4 w-32" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-4 w-12" />
+          ))}
+          <Skeleton className="h-4 w-12" />
+        </div>
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-3 py-2.5 border-b border-border last:border-0">
+            <Skeleton className="h-4 w-8" />
+            <Skeleton className="h-4 w-28" />
+            {Array.from({ length: 5 }).map((_, j) => (
+              <Skeleton key={j} className="h-4 w-12" />
+            ))}
+            <Skeleton className="h-4 w-12" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ContestStandingsPage() {
   const params = useParams();
@@ -34,16 +62,26 @@ export default function ContestStandingsPage() {
   return (
     <div className="space-y-4">
       {isLoading ? (
-        <Spinner />
+        <StandingsTableSkeleton />
       ) : !data || !data.users || data.users.length === 0 ? (
-        <p className="text-muted-foreground py-8 text-center">No standings data available.</p>
+        <div className="text-center py-16 space-y-3">
+          <div className="text-4xl">📊</div>
+          <p className="text-muted-foreground text-lg">No standings data yet</p>
+          <p className="text-muted-foreground text-sm">Standings will appear here once participants submit solutions.</p>
+          <Link href={`/contests/${contestId}/submit`} className="inline-block mt-2 text-sm text-primary hover:underline">
+            Submit a solution
+          </Link>
+        </div>
       ) : (
         <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
-          {contestType === 'acm' ? (
-            <AcmStandings data={data} />
-          ) : (
-            <ClassicStandings data={data} />
-          )}
+          <div className="overflow-x-auto relative">
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
+            {contestType === 'acm' ? (
+              <AcmStandings data={data} />
+            ) : (
+              <ClassicStandings data={data} />
+            )}
+          </div>
         </div>
       )}
     </div>

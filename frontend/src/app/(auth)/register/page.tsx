@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FormInput } from '@/components/ui/form-field';
+import { Loader2, UserPlus } from 'lucide-react';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -76,8 +77,12 @@ export default function RegisterPage() {
             onChange={(e) => setNickname(e.target.value)}
             required
           />
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Registering...' : 'Register'}
+          <Button type="submit" disabled={loading} className="w-full gap-1.5">
+            {loading ? (
+              <><Loader2 className="size-4 animate-spin" />Registering...</>
+            ) : (
+              <><UserPlus className="size-4" />Register</>
+            )}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}

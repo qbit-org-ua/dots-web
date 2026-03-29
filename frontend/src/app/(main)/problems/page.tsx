@@ -5,10 +5,36 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
+import { BookOpen } from 'lucide-react';
 import type { Problem } from '@/types';
+
+function ProblemsTableSkeleton() {
+  return (
+    <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-20">#</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead className="text-right w-32">Complexity</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 10 }).map((_, i) => (
+            <TableRow key={i}>
+              <TableCell><Skeleton className="h-4 w-10" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-8 ml-auto" /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
 
 export default function ProblemsPage() {
   const [page, setPage] = useState(1);
@@ -46,9 +72,15 @@ export default function ProblemsPage() {
       </div>
 
       {isLoading ? (
-        <Spinner />
+        <ProblemsTableSkeleton />
       ) : problems.length === 0 ? (
-        <p className="text-muted-foreground py-8 text-center">No problems found.</p>
+        <div className="text-center py-16 space-y-3">
+          <BookOpen className="size-12 mx-auto text-muted-foreground/50" />
+          <p className="text-muted-foreground text-lg">No problems found</p>
+          <p className="text-muted-foreground text-sm">
+            {search ? 'Try a different search term.' : 'Problems will appear here once they are added to the archive.'}
+          </p>
+        </div>
       ) : (
         <>
           <div className="bg-card rounded-lg shadow-sm ring-1 ring-border overflow-hidden">
