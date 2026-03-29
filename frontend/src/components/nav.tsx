@@ -32,7 +32,8 @@ export function Nav() {
   const [sheetOpen, setSheetOpen] = React.useState(false);
 
   const navLinks = [
-    { href: '/contests', label: t('nav.contests') },
+    { href: '/contests', label: t('nav.contests'), auth: false },
+    ...(user ? [{ href: '/solutions', label: t('nav.mySolutions'), auth: true }] : []),
   ];
 
   return (
@@ -99,9 +100,6 @@ export function Nav() {
                       <Settings className="size-4 mr-2" />
                       {t('nav.profile')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push('/solutions')}>
-                      {t('nav.mySolutions')}
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       variant="destructive"
@@ -161,9 +159,6 @@ export function Nav() {
                       </Link>
                       <Link href="/profile" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
                         {t('nav.profile')}
-                      </Link>
-                      <Link href="/solutions" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                        {t('nav.mySolutions')}
                       </Link>
                       {(user.access & 0x0100) !== 0 && (
                         <Link href="/admin" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
