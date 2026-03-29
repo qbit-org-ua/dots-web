@@ -109,7 +109,7 @@ export default function ContestSolutionsPage() {
                 {solutions.map((s) => (
                   <TableRow key={s.solution_id}>
                     <TableCell>
-                      <Link href={`/solutions/${s.solution_id}`} className="text-primary hover:underline">
+                      <Link href={`/contests/${contestId}/solutions/${s.solution_id}`} className="text-primary hover:underline">
                         {s.solution_id}
                       </Link>
                     </TableCell>
@@ -121,7 +121,7 @@ export default function ContestSolutionsPage() {
                       {s.filename || '-'}
                     </TableCell>
                     <TableCell>
-                      <VerdictBadge result={s.test_result} />
+                      <VerdictBadge result={s.test_result} full />
                     </TableCell>
                     <TableCell className="text-right">{s.test_score}</TableCell>
                     <TableCell>{formatDateTime(s.posted_time)}</TableCell>

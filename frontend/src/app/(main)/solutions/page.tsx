@@ -129,7 +129,7 @@ export default function SolutionsPage() {
                       </TableCell>
                       <TableCell>{s.language_name || s.language_id}</TableCell>
                       <TableCell>
-                        <VerdictBadge result={s.test_result} />
+                        <VerdictBadge result={s.test_result} full />
                       </TableCell>
                       <TableCell className="text-right">{s.test_score}</TableCell>
                       <TableCell className="text-muted-foreground">{formatDateTime(s.posted_time)}</TableCell>

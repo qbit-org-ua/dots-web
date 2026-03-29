@@ -119,7 +119,7 @@ export default function ContestSubmitPage() {
       });
       const solutionId = res.data?.solution_id;
       if (solutionId) {
-        router.push(`/solutions/${solutionId}`);
+        router.push(`/contests/${contestId}/solutions/${solutionId}`);
       } else {
         router.push(`/contests/${contestId}/solutions`);
       }
