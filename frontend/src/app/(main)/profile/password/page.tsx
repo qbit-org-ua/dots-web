@@ -35,23 +35,24 @@ export default function ChangePasswordPage() {
       setError('New passwords do not match.');
       return;
     }
-    if (newPassword.length < 6) {
-      setError('New password must be at least 6 characters.');
+    if (newPassword.length < 4) {
+      setError('New password must be at least 4 characters.');
       return;
     }
 
     setLoading(true);
     try {
-      await api.put(`/api/v1/users/${user.user_id}`, {
+      await api.post(`/api/v1/users/${user.user_id}/password`, {
         old_password: oldPassword,
-        password: newPassword,
+        new_password: newPassword,
       });
       setSuccess('Password changed successfully.');
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to change password';
+      const errData = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error;
+      const msg = typeof errData === 'string' ? errData : errData?.message || 'Failed to change password';
       setError(msg);
     } finally {
       setLoading(false);
