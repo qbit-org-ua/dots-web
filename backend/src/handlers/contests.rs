@@ -645,8 +645,43 @@ pub async fn list_contest_solutions(
     }
     let solutions = lq.bind(per_page).bind(offset).fetch_all(&state.pool).await?;
 
+    // Enrich with problem titles and short names from contest_problems
+    let problem_ids: Vec<u32> = solutions.iter().map(|s| s.problem_id).collect();
+    let mut problem_info: std::collections::HashMap<u32, (String, String)> = std::collections::HashMap::new();
+    if !problem_ids.is_empty() {
+        let placeholders = problem_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "SELECT cp.problem_id, cp.short_name, COALESCE(p.title, '') \
+             FROM labs_contest_problems cp \
+             LEFT JOIN labs_problems p ON cp.problem_id = p.problem_id \
+             WHERE cp.contest_id = ? AND cp.problem_id IN ({})",
+            placeholders
+        );
+        let mut q = sqlx::query_as::<_, (i32, String, String)>(&sql);
+        q = q.bind(contest_id);
+        for pid in &problem_ids {
+            q = q.bind(*pid);
+        }
+        let rows = q.fetch_all(&state.pool).await?;
+        for (pid, sn, title) in rows {
+            problem_info.insert(pid as u32, (sn, title));
+        }
+    }
+
+    let enriched: Vec<serde_json::Value> = solutions.iter().map(|s| {
+        let (short_name, problem_title) = problem_info.get(&s.problem_id)
+            .cloned()
+            .unwrap_or_default();
+        let mut val = serde_json::to_value(s).unwrap_or_default();
+        if let Some(obj) = val.as_object_mut() {
+            obj.insert("short_name".to_string(), serde_json::json!(short_name));
+            obj.insert("problem_title".to_string(), serde_json::json!(problem_title));
+        }
+        val
+    }).collect();
+
     Ok(Json(json!({
-        "solutions": solutions,
+        "solutions": enriched,
         "total": total,
         "page": page,
         "per_page": per_page,

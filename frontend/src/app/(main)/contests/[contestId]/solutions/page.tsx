@@ -1,13 +1,13 @@
 'use client';
 
 import React from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { formatDateTime } from '@/lib/utils';
+import { formatDuration } from '@/lib/utils';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -22,11 +22,10 @@ function SolutionsTableSkeleton() {
         <TableHeader>
           <TableRow>
             <TableHead><Skeleton className="h-4 w-8" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-32" /></TableHead>
             <TableHead><Skeleton className="h-4 w-20" /></TableHead>
             <TableHead className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-24" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-20" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -34,10 +33,9 @@ function SolutionsTableSkeleton() {
             <TableRow key={i}>
               <TableCell><Skeleton className="h-4 w-12" /></TableCell>
               <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-20" /></TableCell>
               <TableCell><Skeleton className="h-5 w-20 rounded" /></TableCell>
               <TableCell className="text-right"><Skeleton className="h-4 w-8 ml-auto" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-20" /></TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -49,6 +47,7 @@ function SolutionsTableSkeleton() {
 export default function ContestSolutionsPage() {
   const params = useParams();
   const contestId = params.contestId as string;
+  const router = useRouter();
   const { user } = useAuth();
   const { t } = useTranslation();
 
@@ -97,9 +96,8 @@ export default function ContestSolutionsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('solutions.tableId')}</TableHead>
+                  <TableHead className="w-12">#</TableHead>
                   <TableHead>{t('solutions.tableProblem')}</TableHead>
-                  <TableHead>{t('solutions.tableSolution')}</TableHead>
                   <TableHead>{t('solutions.tableResult')}</TableHead>
                   <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
                   <TableHead>{t('solutions.tablePosted')}</TableHead>
@@ -107,24 +105,30 @@ export default function ContestSolutionsPage() {
               </TableHeader>
               <TableBody>
                 {solutions.map((s) => (
-                  <TableRow key={s.solution_id}>
+                  <TableRow
+                    key={s.solution_id}
+                    className="cursor-pointer"
+                    onClick={() => router.push(`/contests/${contestId}/solutions/${s.solution_id}`)}
+                  >
+                    <TableCell className="text-muted-foreground font-mono text-xs">
+                      {s.solution_id}
+                    </TableCell>
                     <TableCell>
-                      <Link href={`/contests/${contestId}/solutions/${s.solution_id}`} className="text-primary hover:underline">
-                        {s.solution_id}
+                      <Link
+                        href={`/problems/${s.problem_id}`}
+                        className="text-primary hover:underline font-medium"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {s.short_name ? `${s.short_name}. ` : ''}{s.problem_title || `#${s.problem_id}`}
                       </Link>
-                    </TableCell>
-                    <TableCell>
-                      {s.short_name ? `${s.short_name}. ` : ''}
-                      {s.problem_title || `Problem #${s.problem_id}`}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs font-mono">
-                      {s.filename || '-'}
                     </TableCell>
                     <TableCell>
                       <VerdictBadge result={s.test_result} full />
                     </TableCell>
-                    <TableCell className="text-right">{s.test_score}</TableCell>
-                    <TableCell>{formatDateTime(s.posted_time)}</TableCell>
+                    <TableCell className="text-right font-mono">{s.test_score}</TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-xs">
+                      {s.contest_time ? formatDuration(s.contest_time) : '-'}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
