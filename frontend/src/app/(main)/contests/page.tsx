@@ -23,8 +23,8 @@ import type { Contest } from '@/types';
 function ContestCard({ contest, t, isRegistered }: { contest: Contest; t: (k: string) => string; isRegistered: boolean }) {
   return (
     <Link href={`/contests/${contest.contest_id}`}>
-      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-        <CardContent className="p-4 space-y-3">
+      <div className="h-full rounded-xl bg-card text-card-foreground shadow-sm border border-foreground/15 hover:border-foreground/25 hover:shadow-md transition-all cursor-pointer">
+        <div className="p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
               {contest.title}
@@ -50,8 +50,8 @@ function ContestCard({ contest, t, isRegistered }: { contest: Contest; t: (k: st
               {contest.user_count}
             </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 }
