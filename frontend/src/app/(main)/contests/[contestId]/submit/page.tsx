@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
-import { FormSelect, FormTextarea } from '@/components/ui/form-field';
+import { FormSelect } from '@/components/ui/form-field';
+import { CodeEditor, getMonacoLanguage } from '@/components/code-editor';
 import { Loader2, Send } from 'lucide-react';
 import type { ContestProblem, Language } from '@/types';
 
@@ -160,14 +161,21 @@ export default function ContestSubmitPage() {
                 label: l.name,
               }))}
             />
-            <FormTextarea
-              label={t('submit.sourceCode')}
-              value={source}
-              onChange={handleSourceChange}
-              rows={15}
-              className="font-mono text-sm"
-              placeholder={t('submit.pastePlaceholder')}
-            />
+            <div className="space-y-1.5">
+              <Label>{t('submit.sourceCode')}</Label>
+              <CodeEditor
+                value={source}
+                onChange={(val) => {
+                  setSource(val);
+                  if (val.trim()) {
+                    setFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }
+                }}
+                language={getMonacoLanguage(languages.find(l => String(l.id) === languageId)?.name ?? '')}
+                height="400px"
+              />
+            </div>
             <div className="space-y-1">
               <Label>{t('submit.orFile')}</Label>
               <input

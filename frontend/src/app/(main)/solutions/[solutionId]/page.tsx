@@ -13,7 +13,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { FileCode, ExternalLink, ArrowLeft } from 'lucide-react';
+import { CodeEditor, getMonacoLanguage } from '@/components/code-editor';
+import { FileCode, ExternalLink, ArrowLeft, Code } from 'lucide-react';
 import type { Solution, TestResult } from '@/types';
 
 function testRowBg(code: string): string {
@@ -25,6 +26,51 @@ function testRowBg(code: string): string {
     case 'CE': return 'bg-yellow-500/5';
     default: return '';
   }
+}
+
+function SourceCodeViewer({ solutionId, language, t }: { solutionId: number; language: string; t: (k: string) => string }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const { data, isLoading } = useQuery({
+    queryKey: ['solution-source', solutionId],
+    queryFn: async () => {
+      const res = await api.get(`/api/v1/solutions/${solutionId}/source`, { responseType: 'text' });
+      return typeof res.data === 'string' ? res.data : '';
+    },
+    enabled: expanded,
+    retry: false,
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Code className="size-4" />
+            {t('solutions.sourceCode')}
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
+            {expanded ? t('common.hide') : t('common.show')}
+          </Button>
+        </div>
+      </CardHeader>
+      {expanded && (
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-[300px] w-full rounded-lg" />
+          ) : data ? (
+            <CodeEditor
+              value={data}
+              language={getMonacoLanguage(language)}
+              readOnly
+              height="400px"
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('solutions.sourceUnavailable')}</p>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
 }
 
 function SolutionDetailSkeleton() {
@@ -183,6 +229,8 @@ export default function SolutionDetailPage() {
           </Link>
         )}
       </div>
+
+      <SourceCodeViewer solutionId={solution.solution_id} language={language} t={t} />
 
       {solution.compile_error && (
         <Card>

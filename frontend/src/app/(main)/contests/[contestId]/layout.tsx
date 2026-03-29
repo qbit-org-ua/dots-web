@@ -76,22 +76,10 @@ export default function ContestLayout({ children }: { children: React.ReactNode 
             <span className="text-foreground font-medium truncate max-w-md">
               {isLoading ? '...' : contest?.title || `Contest #${contestId}`}
             </span>
-          </nav>
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-foreground truncate">
-              {isLoading ? <Skeleton className="h-6 w-48 inline-block" /> : contest?.title}
-            </h1>
-            {contest && (
-              <>
-                <span className="text-xs text-muted-foreground">
-                  {t('contestType.' + contest.contest_type)}
-                </span>
-                {status && (
-                  <Badge variant={STATUS_BADGE_VARIANT[status] || 'secondary'}>{t('status.' + status)}</Badge>
-                )}
-              </>
+            {status && (
+              <Badge variant={STATUS_BADGE_VARIANT[status] || 'secondary'}>{t('status.' + status)}</Badge>
             )}
-          </div>
+          </nav>
         </div>
 
         {/* Tab navigation */}
