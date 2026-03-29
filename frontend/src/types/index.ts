@@ -184,6 +184,7 @@ export interface ProblemScore {
   is_solved: boolean;
   time: number;
   is_first_solve: boolean;
+  solution_id?: number | null;
 }
 
 export interface StandingsUser {

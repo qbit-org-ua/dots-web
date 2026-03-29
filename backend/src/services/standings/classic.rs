@@ -60,6 +60,27 @@ pub async fn compute_classic_standings(
     .fetch_all(pool)
     .await?;
 
+    // Get the best solution_id per user per problem (the one with highest test_score)
+    let best_solution_ids: HashMap<(u32, u32), u32> = {
+        let rows: Vec<(u32, u32, u32)> = sqlx::query_as(
+            "SELECT s.user_id, s.problem_id, s.solution_id \
+             FROM labs_solutions s \
+             INNER JOIN ( \
+               SELECT user_id, problem_id, MAX(test_score) as max_score \
+               FROM labs_solutions \
+               WHERE contest_id = ? AND test_result >= 0 \
+               GROUP BY user_id, problem_id \
+             ) best ON s.user_id = best.user_id AND s.problem_id = best.problem_id AND s.test_score = best.max_score \
+             WHERE s.contest_id = ? AND s.test_result >= 0 \
+             GROUP BY s.user_id, s.problem_id"
+        )
+        .bind(contest.contest_id)
+        .bind(contest.contest_id)
+        .fetch_all(pool)
+        .await?;
+        rows.into_iter().map(|(uid, pid, sid)| ((uid, pid), sid)).collect()
+    };
+
     // Get problem max_scores from contest_problems for deciding which score to use
     let problem_max_scores: HashMap<i32, i32> = {
         let rows: Vec<(i32, i32)> = sqlx::query_as(
@@ -72,8 +93,8 @@ pub async fn compute_classic_standings(
     };
 
     // Build per-user score map
-    // user_id -> problem_id -> (score, is_passed)
-    let mut user_scores: HashMap<u32, HashMap<i32, (Decimal, bool)>> = HashMap::new();
+    // user_id -> problem_id -> (score, is_solved, solution_id)
+    let mut user_scores: HashMap<u32, HashMap<i32, (Decimal, bool, Option<u32>)>> = HashMap::new();
 
     for sol in &solutions {
         // Filter by group if needed
@@ -98,7 +119,7 @@ pub async fn compute_classic_standings(
         user_scores
             .entry(sol.user_id)
             .or_default()
-            .insert(pid_i32, (score, sol.has_ok > 0));
+            .insert(pid_i32, (score, sol.has_ok > 0, best_solution_ids.get(&(sol.user_id, sol.problem_id)).copied()));
     }
 
     // Get user info
@@ -167,9 +188,9 @@ pub async fn compute_classic_standings(
         let mut solved = 0i32;
 
         for (pid, short_name, _title) in &problems {
-            let (score, is_passed) = scores.get(pid).cloned().unwrap_or((Decimal::ZERO, false));
+            let (score, is_solved, sol_id) = scores.get(pid).cloned().unwrap_or((Decimal::ZERO, false, None));
             total += score;
-            if is_passed {
+            if is_solved {
                 solved += 1;
             }
 
@@ -177,9 +198,10 @@ pub async fn compute_classic_standings(
                 problem_id: *pid as u32,
                 score: score.to_string(),
                 attempts: 0,
-                is_solved: is_passed,
+                is_solved,
                 time: 0,
                 is_first_solve: false,
+                solution_id: sol_id,
             });
         }
 
@@ -218,9 +240,9 @@ pub async fn compute_classic_standings(
     let mut problem_score_count: HashMap<i32, i32> = HashMap::new();
 
     for scores in user_scores.values() {
-        for (pid, (score, is_passed)) in scores {
+        for (pid, (score, is_solved, _sol_id)) in scores {
             *problem_tried.entry(*pid).or_default() += 1;
-            if *is_passed {
+            if *is_solved {
                 *problem_solved.entry(*pid).or_default() += 1;
             }
             if *score > Decimal::ZERO {

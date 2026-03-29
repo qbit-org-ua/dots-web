@@ -4,7 +4,6 @@ import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { StandingsData, ProblemScore, StandingsUser } from '@/types';
 
 function formatTime(seconds: number): string {
@@ -27,7 +26,7 @@ function computeRankRanges(users: StandingsUser[]): Map<number, string> {
   return ranges;
 }
 
-export function AcmStandings({ data, contestId, currentUserId }: { data: StandingsData; contestId?: string; currentUserId?: number }) {
+export function AcmStandings({ data, contestId, currentUserId, canViewAll = false }: { data: StandingsData; contestId?: string; currentUserId?: number; canViewAll?: boolean }) {
   const { t } = useTranslation();
   const rankRanges = computeRankRanges(data.users);
 
@@ -69,6 +68,18 @@ export function AcmStandings({ data, contestId, currentUserId }: { data: Standin
                 {user.scores.map((ps: ProblemScore, idx: number) => {
                   const solved = ps.is_solved;
                   const attempts = ps.attempts;
+                  const canLink = ps.solution_id && contestId && (isMe || canViewAll);
+                  const cellContent = solved ? (
+                    <div>
+                      <div className={cn('font-bold', ps.is_first_solve ? 'text-green-700 dark:text-green-300' : 'text-green-600 dark:text-green-400')}>
+                        +{attempts > 1 ? attempts - 1 : ''}
+                      </div>
+                      <div className="text-muted-foreground">{formatTime(ps.time)}</div>
+                    </div>
+                  ) : attempts > 0 ? (
+                    <div className="font-bold text-red-600 dark:text-red-400">-{attempts}</div>
+                  ) : null;
+
                   return (
                     <td
                       key={idx}
@@ -77,27 +88,11 @@ export function AcmStandings({ data, contestId, currentUserId }: { data: Standin
                         solved ? 'bg-green-500/15' : attempts > 0 ? 'bg-red-500/10' : ''
                       )}
                     >
-                      <Tooltip>
-                        <TooltipTrigger className="cursor-default w-full">
-                          {solved ? (
-                            <div>
-                              <div className={cn('font-bold', ps.is_first_solve ? 'text-green-700 dark:text-green-300' : 'text-green-600 dark:text-green-400')}>
-                                +{attempts > 1 ? attempts - 1 : ''}
-                              </div>
-                              <div className="text-muted-foreground">{formatTime(ps.time)}</div>
-                            </div>
-                          ) : attempts > 0 ? (
-                            <div className="font-bold text-red-600 dark:text-red-400">-{attempts}</div>
-                          ) : null}
-                        </TooltipTrigger>
-                        {(solved || attempts > 0) && (
-                          <TooltipContent>
-                            {solved
-                              ? `Solved in ${attempts} attempt${attempts > 1 ? 's' : ''} at ${formatTime(ps.time)}`
-                              : `${attempts} failed attempt${attempts > 1 ? 's' : ''}`}
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
+                      {canLink && cellContent ? (
+                        <Link href={`/contests/${contestId}/solutions/${ps.solution_id}`} className="block hover:underline">
+                          {cellContent}
+                        </Link>
+                      ) : cellContent}
                     </td>
                   );
                 })}

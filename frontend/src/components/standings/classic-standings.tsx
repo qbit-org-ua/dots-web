@@ -4,7 +4,6 @@ import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { StandingsData, ProblemScore, StandingsUser } from '@/types';
 
 function scoreColor(score: number, maxScore: number) {
@@ -26,7 +25,7 @@ function computeRankRanges(users: StandingsUser[]): Map<number, string> {
   return ranges;
 }
 
-export function ClassicStandings({ data, contestId, currentUserId }: { data: StandingsData; contestId?: string; currentUserId?: number }) {
+export function ClassicStandings({ data, contestId, currentUserId, canViewAll = false }: { data: StandingsData; contestId?: string; currentUserId?: number; canViewAll?: boolean }) {
   const { t } = useTranslation();
   const rankRanges = computeRankRanges(data.users);
 
@@ -68,21 +67,20 @@ export function ClassicStandings({ data, contestId, currentUserId }: { data: Sta
                 {user.scores.map((ps: ProblemScore, idx: number) => {
                   const score = parseFloat(ps.score) || 0;
                   const maxScore = 100;
+                  const display = score > 0 ? ps.score : ps.is_solved ? '0' : '';
+                  const canLink = ps.solution_id && contestId && (isMe || canViewAll);
                   return (
                     <td
                       key={idx}
                       className={cn('px-3 py-2 text-center font-mono text-xs', scoreColor(score, maxScore))}
                     >
-                      <Tooltip>
-                        <TooltipTrigger className="cursor-default w-full">
-                          {score > 0 ? ps.score : ps.is_solved ? '0' : ''}
-                        </TooltipTrigger>
-                        {score > 0 && (
-                          <TooltipContent>
-                            {t('standings.score')}: {ps.score} / {maxScore}
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
+                      {canLink && display ? (
+                        <Link href={`/contests/${contestId}/solutions/${ps.solution_id}`} className="hover:underline">
+                          {display}
+                        </Link>
+                      ) : (
+                        display
+                      )}
                     </td>
                   );
                 })}

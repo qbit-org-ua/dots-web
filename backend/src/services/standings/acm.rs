@@ -8,6 +8,7 @@ use crate::services::contest_engine::{compute_status, ContestStatus};
 
 #[derive(sqlx::FromRow, Debug)]
 struct AcmSolutionRow {
+    solution_id: u32,
     user_id: u32,
     problem_id: u32,
     test_result: i32,
@@ -21,6 +22,7 @@ struct AcmProblemResult {
     attempts: i32,
     time: i64, // time of first AC in minutes
     is_frozen: bool,
+    solution_id: Option<u32>,
 }
 
 /// Compute ACM-style standings
@@ -75,7 +77,7 @@ pub async fn compute_acm_standings(
 
     // Get all solutions ordered by time
     let solutions: Vec<AcmSolutionRow> = sqlx::query_as(
-        "SELECT s.user_id, s.problem_id, s.test_result, s.contest_time, s.is_passed, s.posted_time \
+        "SELECT s.solution_id, s.user_id, s.problem_id, s.test_result, s.contest_time, s.is_passed, s.posted_time \
          FROM labs_solutions s \
          WHERE s.contest_id = ? AND s.test_result >= 0 \
          ORDER BY s.user_id, s.problem_id, s.posted_time ASC"
@@ -107,6 +109,7 @@ pub async fn compute_acm_standings(
                 attempts: 0,
                 time: 0,
                 is_frozen: false,
+                solution_id: None,
             });
 
         // Skip if already solved
@@ -128,6 +131,7 @@ pub async fn compute_acm_standings(
             entry.solved = true;
             entry.time = ct / 60; // convert to minutes
             entry.attempts += 1;
+            entry.solution_id = Some(sol.solution_id);
 
             // Track first solve
             let first = first_solve.entry(sol.problem_id as i32).or_insert((sol.user_id, ct));
@@ -136,6 +140,7 @@ pub async fn compute_acm_standings(
             }
         } else {
             entry.attempts += 1;
+            entry.solution_id = Some(sol.solution_id); // track last attempt
         }
     }
 
@@ -237,6 +242,11 @@ pub async fn compute_acm_standings(
                 None => (String::new(), 0, false, 0, false),
             };
 
+            let sol_id = match result {
+                Some(r) => r.solution_id,
+                None => None,
+            };
+
             problem_scores.push(ProblemScore {
                 problem_id: *pid as u32,
                 score: score_str,
@@ -244,6 +254,7 @@ pub async fn compute_acm_standings(
                 is_solved,
                 time,
                 is_first_solve: is_first,
+                solution_id: sol_id,
             });
         }
 

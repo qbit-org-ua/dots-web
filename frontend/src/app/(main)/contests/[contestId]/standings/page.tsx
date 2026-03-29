@@ -81,9 +81,9 @@ export default function ContestStandingsPage() {
           <div className="overflow-x-auto relative">
             <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
             {contestType === 'acm' ? (
-              <AcmStandings data={data} contestId={contestId} currentUserId={user?.user_id} />
+              <AcmStandings data={data} contestId={contestId} currentUserId={user?.user_id} canViewAll={!!(user && (user.access & 0x0100))} />
             ) : (
-              <ClassicStandings data={data} contestId={contestId} currentUserId={user?.user_id} />
+              <ClassicStandings data={data} contestId={contestId} currentUserId={user?.user_id} canViewAll={!!(user && (user.access & 0x0100))} />
             )}
           </div>
         </div>

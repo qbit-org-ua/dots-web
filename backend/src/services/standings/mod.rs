@@ -51,6 +51,7 @@ pub struct ProblemScore {
     pub is_solved: bool,
     pub time: i64,
     pub is_first_solve: bool,
+    pub solution_id: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
