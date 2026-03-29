@@ -1,0 +1,90 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { formatDateTime } from '@/lib/utils';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Spinner } from '@/components/ui/spinner';
+import { Pagination } from '@/components/ui/pagination';
+import { Input } from '@/components/ui/input';
+import type { UserFull } from '@/types';
+
+export default function UsersPage() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['users', page, search],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/users', {
+        params: { page, per_page: 25, search: search || undefined },
+      });
+      return res.data;
+    },
+  });
+
+  const users: UserFull[] = data?.users ?? [];
+  const total = data?.total ?? 0;
+  const perPage = data?.per_page ?? 25;
+  const totalPages = Math.ceil(total / perPage);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+        <div className="w-full sm:w-64">
+          <Input
+            placeholder="Search users..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+      </div>
+
+      {isLoading ? (
+        <Spinner />
+      ) : users.length === 0 ? (
+        <p className="text-gray-500 py-8 text-center">No users found.</p>
+      ) : (
+        <>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nickname</TableHead>
+                  <TableHead>Full Name</TableHead>
+                  <TableHead>City</TableHead>
+                  <TableHead>Last Login</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((u) => (
+                  <TableRow key={u.user_id}>
+                    <TableCell>
+                      <Link href={`/users/${u.user_id}`} className="text-blue-600 hover:underline font-medium">
+                        {u.nickname}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      {[u.last_name, u.first_name].filter(Boolean).join(' ') || '-'}
+                    </TableCell>
+                    <TableCell>{u.city || '-'}</TableCell>
+                    <TableCell className="text-gray-500">
+                      {u.last_login_time ? formatDateTime(u.last_login_time) : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
+      )}
+    </div>
+  );
+}
