@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import type { StandingsData, ProblemScore } from '@/types';
+import type { StandingsData, ProblemScore, StandingsUser } from '@/types';
 
 function formatTime(seconds: number): string {
   if (!seconds) return '';
@@ -14,26 +14,39 @@ function formatTime(seconds: number): string {
   return `${h}:${String(m).padStart(2, '0')}`;
 }
 
-function RankCell({ place }: { place: number }) {
-  if (place === 1) return <span className="text-lg" title="1st place">🥇</span>;
-  if (place === 2) return <span className="text-lg" title="2nd place">🥈</span>;
-  if (place === 3) return <span className="text-lg" title="3rd place">🥉</span>;
-  return <span className="text-muted-foreground">{place}</span>;
+function computeRankRanges(users: StandingsUser[]): Map<number, string> {
+  const ranges = new Map<number, string>();
+  let i = 0;
+  while (i < users.length) {
+    let j = i;
+    while (j < users.length && users[j].place === users[i].place) j++;
+    const label = j - i > 1 ? `${i + 1}-${j}` : `${i + 1}`;
+    for (let k = i; k < j; k++) ranges.set(users[k].user_id, label);
+    i = j;
+  }
+  return ranges;
 }
 
-export function AcmStandings({ data }: { data: StandingsData }) {
+export function AcmStandings({ data, contestId, currentUserId }: { data: StandingsData; contestId?: string; currentUserId?: number }) {
   const { t } = useTranslation();
+  const rankRanges = computeRankRanges(data.users);
 
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead>
           <tr className="bg-muted border-b border-border">
-            <th className="px-3 py-2 text-left font-medium text-muted-foreground w-12">{t('standings.rank')}</th>
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground w-16">{t('standings.rank')}</th>
             <th className="px-3 py-2 text-left font-medium text-muted-foreground">{t('standings.team')}</th>
             {data.problems.map((p) => (
-              <th key={p.problem_id} className="px-3 py-2 text-center font-medium text-muted-foreground min-w-[70px]" title={p.title}>
-                {p.short_name}
+              <th key={p.problem_id} className="px-3 py-2 text-center font-medium text-muted-foreground min-w-[70px]">
+                {contestId ? (
+                  <Link href={`/contests/${contestId}/problems/${p.problem_id}`} className="hover:text-primary transition-colors" title={p.title}>
+                    {p.short_name}
+                  </Link>
+                ) : (
+                  <span title={p.title}>{p.short_name}</span>
+                )}
               </th>
             ))}
             <th className="px-3 py-2 text-center font-medium text-muted-foreground">{t('standings.solved')}</th>
@@ -41,55 +54,58 @@ export function AcmStandings({ data }: { data: StandingsData }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {data.users.map((user) => (
-            <tr key={user.user_id} className="hover:bg-muted/50">
-              <td className="px-3 py-2 font-medium text-center">
-                <RankCell place={user.place} />
-              </td>
-              <td className="px-3 py-2">
-                <Link href={`/users/${user.user_id}`} className="text-primary hover:underline font-medium">
-                  {user.nickname}
-                </Link>
-              </td>
-              {user.scores.map((ps: ProblemScore, idx: number) => {
-                const solved = ps.is_solved;
-                const attempts = ps.attempts;
-                return (
-                  <td
-                    key={idx}
-                    className={cn(
-                      'px-3 py-1 text-center text-xs',
-                      solved ? 'bg-green-500/15' : attempts > 0 ? 'bg-red-500/10' : ''
-                    )}
-                  >
-                    <Tooltip>
-                      <TooltipTrigger className="cursor-default w-full">
-                        {solved ? (
-                          <div>
-                            <div className={cn('font-bold', ps.is_first_solve ? 'text-green-700 dark:text-green-300' : 'text-green-600 dark:text-green-400')}>
-                              +{attempts > 1 ? attempts - 1 : ''}
-                            </div>
-                            <div className="text-muted-foreground">{formatTime(ps.time)}</div>
-                          </div>
-                        ) : attempts > 0 ? (
-                          <div className="font-bold text-red-600 dark:text-red-400">-{attempts}</div>
-                        ) : null}
-                      </TooltipTrigger>
-                      {(solved || attempts > 0) && (
-                        <TooltipContent>
-                          {solved
-                            ? `Solved in ${attempts} attempt${attempts > 1 ? 's' : ''} at ${formatTime(ps.time)}`
-                            : `${attempts} failed attempt${attempts > 1 ? 's' : ''}`}
-                        </TooltipContent>
+          {data.users.map((user) => {
+            const isMe = currentUserId === user.user_id;
+            return (
+              <tr key={user.user_id} className={cn('hover:bg-muted/50', isMe && 'bg-primary/5 font-medium')}>
+                <td className="px-3 py-2 text-muted-foreground text-center text-xs font-mono">
+                  {rankRanges.get(user.user_id) || user.place}
+                </td>
+                <td className="px-3 py-2">
+                  <Link href={`/users/${user.user_id}`} className={cn('hover:underline', isMe ? 'text-primary font-semibold' : 'text-primary font-medium')}>
+                    {user.nickname}
+                  </Link>
+                </td>
+                {user.scores.map((ps: ProblemScore, idx: number) => {
+                  const solved = ps.is_solved;
+                  const attempts = ps.attempts;
+                  return (
+                    <td
+                      key={idx}
+                      className={cn(
+                        'px-3 py-1 text-center text-xs',
+                        solved ? 'bg-green-500/15' : attempts > 0 ? 'bg-red-500/10' : ''
                       )}
-                    </Tooltip>
-                  </td>
-                );
-              })}
-              <td className="px-3 py-2 text-center font-bold">{user.total_solved}</td>
-              <td className="px-3 py-2 text-center text-muted-foreground">{user.penalty}</td>
-            </tr>
-          ))}
+                    >
+                      <Tooltip>
+                        <TooltipTrigger className="cursor-default w-full">
+                          {solved ? (
+                            <div>
+                              <div className={cn('font-bold', ps.is_first_solve ? 'text-green-700 dark:text-green-300' : 'text-green-600 dark:text-green-400')}>
+                                +{attempts > 1 ? attempts - 1 : ''}
+                              </div>
+                              <div className="text-muted-foreground">{formatTime(ps.time)}</div>
+                            </div>
+                          ) : attempts > 0 ? (
+                            <div className="font-bold text-red-600 dark:text-red-400">-{attempts}</div>
+                          ) : null}
+                        </TooltipTrigger>
+                        {(solved || attempts > 0) && (
+                          <TooltipContent>
+                            {solved
+                              ? `Solved in ${attempts} attempt${attempts > 1 ? 's' : ''} at ${formatTime(ps.time)}`
+                              : `${attempts} failed attempt${attempts > 1 ? 's' : ''}`}
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </td>
+                  );
+                })}
+                <td className="px-3 py-2 text-center font-bold">{user.total_solved}</td>
+                <td className="px-3 py-2 text-center text-muted-foreground">{user.penalty}</td>
+              </tr>
+            );
+          })}
         </tbody>
         {data.summary && data.summary.length > 0 && (
           <tfoot>

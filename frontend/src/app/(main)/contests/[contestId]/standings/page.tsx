@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ClassicStandings } from '@/components/standings/classic-standings';
@@ -41,6 +42,7 @@ function StandingsTableSkeleton() {
 export default function ContestStandingsPage() {
   const params = useParams();
   const contestId = params.contestId as string;
+  const { user } = useAuth();
   const { t } = useTranslation();
 
   const { data: contestData } = useQuery({
@@ -79,9 +81,9 @@ export default function ContestStandingsPage() {
           <div className="overflow-x-auto relative">
             <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent md:hidden z-10" />
             {contestType === 'acm' ? (
-              <AcmStandings data={data} />
+              <AcmStandings data={data} contestId={contestId} currentUserId={user?.user_id} />
             ) : (
-              <ClassicStandings data={data} />
+              <ClassicStandings data={data} contestId={contestId} currentUserId={user?.user_id} />
             )}
           </div>
         </div>
