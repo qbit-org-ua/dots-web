@@ -84,7 +84,8 @@ export default function ContestSubmitPage() {
     },
   });
 
-  const { data: solutionsData } = useQuery({
+  // Fetch solutions from this contest first
+  const { data: contestSolutionsData } = useQuery({
     queryKey: ['contest-solutions-preselect', contestId],
     queryFn: async () => {
       const res = await api.get(`/api/v1/contests/${contestId}/solutions`, {
@@ -95,9 +96,23 @@ export default function ContestSubmitPage() {
     enabled: !!user && !preselectedLang,
   });
 
+  // Also fetch user's global solutions (for language fallback across contests)
+  const { data: globalSolutionsData } = useQuery({
+    queryKey: ['global-solutions-preselect'],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/solutions', {
+        params: { per_page: 5, user_id: user!.user_id },
+      });
+      return res.data;
+    },
+    enabled: !!user && !preselectedLang && !(contestSolutionsData?.solutions?.length),
+  });
+
   const problems: ContestProblem[] = problemsData?.problems ?? [];
   const languages: Language[] = languagesData?.languages ?? [];
-  const userSolutions: Solution[] = solutionsData?.solutions ?? [];
+  const contestSolutions: Solution[] = contestSolutionsData?.solutions ?? [];
+  const globalSolutions: Solution[] = globalSolutionsData?.solutions ?? [];
+  const userSolutions = contestSolutions.length > 0 ? contestSolutions : globalSolutions;
 
   // Recover draft on mount (initial problem from URL)
   useEffect(() => {
