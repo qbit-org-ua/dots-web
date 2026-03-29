@@ -124,7 +124,7 @@ pub async fn compute_acm_standings(
             }
         }
 
-        if sol.is_passed > 0 {
+        if sol.test_result == 0 { // test_result == 0 means OK (accepted)
             entry.solved = true;
             entry.time = ct / 60; // convert to minutes
             entry.attempts += 1;

@@ -12,7 +12,7 @@ struct SolutionRow {
     problem_id: u32,
     best_test_score: Decimal,
     best_score: Decimal,
-    max_is_passed: i64,
+    has_ok: i64, // 1 if any solution has test_result = 0 (OK)
 }
 
 /// Compute classic standings (also used for otbor, olympic, cert contest types)
@@ -51,7 +51,7 @@ pub async fn compute_classic_standings(
         "SELECT s.user_id, s.problem_id, \
          MAX(s.test_score) as best_test_score, \
          MAX(s.score) as best_score, \
-         MAX(s.is_passed) as max_is_passed \
+         MAX(CASE WHEN s.test_result = 0 THEN 1 ELSE 0 END) as has_ok \
          FROM labs_solutions s \
          WHERE s.contest_id = ? AND s.test_result >= 0 \
          GROUP BY s.user_id, s.problem_id"
@@ -98,7 +98,7 @@ pub async fn compute_classic_standings(
         user_scores
             .entry(sol.user_id)
             .or_default()
-            .insert(pid_i32, (score, sol.max_is_passed > 0));
+            .insert(pid_i32, (score, sol.has_ok > 0));
     }
 
     // Get user info
