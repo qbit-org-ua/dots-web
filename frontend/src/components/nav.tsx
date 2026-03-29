@@ -2,13 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { Menu, User, LogOut, Settings, Mail, Code2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -22,7 +20,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetClose,
 } from '@/components/ui/sheet';
 
 const navLinks = [
@@ -32,6 +29,8 @@ const navLinks = [
 export function Nav() {
   const { user, isLoading, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
+  const [sheetOpen, setSheetOpen] = React.useState(false);
 
   return (
     <header className="bg-card border-b border-border shadow-sm">
@@ -87,20 +86,18 @@ export function Nav() {
                   </Link>
                 )}
                 <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button variant="ghost" size="sm">
-                        <User className="size-4 mr-1" />
-                        {user.nickname}
-                      </Button>
-                    }
-                  />
+                  <DropdownMenuTrigger>
+                    <button className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium transition-all cursor-pointer hover:bg-accent hover:text-accent-foreground h-9 px-3">
+                      <User className="size-4" />
+                      {user.nickname}
+                    </button>
+                  </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" sideOffset={8}>
-                    <DropdownMenuItem render={<Link href="/profile" />}>
+                    <DropdownMenuItem onClick={() => router.push('/profile')}>
                       <Settings className="size-4 mr-2" />
                       Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem render={<Link href="/solutions" />}>
+                    <DropdownMenuItem onClick={() => router.push('/solutions')}>
                       My Solutions
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -116,11 +113,11 @@ export function Nav() {
               </>
             ) : (
               <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">Login</Button>
+                <Link href="/login" className="px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Login
                 </Link>
-                <Link href="/register">
-                  <Button size="sm">Register</Button>
+                <Link href="/register" className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90">
+                  Register
                 </Link>
               </>
             )}
@@ -129,9 +126,11 @@ export function Nav() {
           {/* Mobile menu */}
           <div className="md:hidden flex items-center gap-2">
             <ThemeToggle />
-            <Sheet>
-              <SheetTrigger render={<Button variant="ghost" size="icon" />}>
-                <Menu className="size-5" />
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetTrigger>
+                <button className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-9 w-9" aria-label="Open menu">
+                  <Menu className="size-5" />
+                </button>
               </SheetTrigger>
               <SheetContent side="right">
                 <SheetHeader>
@@ -139,46 +138,39 @@ export function Nav() {
                 </SheetHeader>
                 <div className="flex flex-col gap-1 p-4">
                   {navLinks.map((link) => (
-                    <SheetClose key={link.href} render={<Link href={link.href} />}>
-                      <span
-                        className={cn(
-                          'block px-3 py-2 rounded-md text-sm',
-                          pathname.startsWith(link.href)
-                            ? 'bg-muted text-foreground font-medium'
-                            : 'text-muted-foreground hover:bg-muted'
-                        )}
-                      >
-                        {link.label}
-                      </span>
-                    </SheetClose>
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setSheetOpen(false)}
+                      className={cn(
+                        'block px-3 py-2 rounded-md text-sm',
+                        pathname.startsWith(link.href)
+                          ? 'bg-muted text-foreground font-medium'
+                          : 'text-muted-foreground hover:bg-muted'
+                      )}
+                    >
+                      {link.label}
+                    </Link>
                   ))}
                   <div className="border-t border-border my-2" />
                   {user ? (
                     <>
-                      <SheetClose render={<Link href="/messages" />}>
-                        <span className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                          Messages {user.messages > 0 && `(${user.messages})`}
-                        </span>
-                      </SheetClose>
-                      <SheetClose render={<Link href="/profile" />}>
-                        <span className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                          Profile
-                        </span>
-                      </SheetClose>
-                      <SheetClose render={<Link href="/solutions" />}>
-                        <span className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                          My Solutions
-                        </span>
-                      </SheetClose>
+                      <Link href="/messages" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                        Messages {user.messages > 0 && `(${user.messages})`}
+                      </Link>
+                      <Link href="/profile" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                        Profile
+                      </Link>
+                      <Link href="/solutions" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                        My Solutions
+                      </Link>
                       {(user.access & 0x0100) !== 0 && (
-                        <SheetClose render={<Link href="/admin" />}>
-                          <span className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
-                            Admin
-                          </span>
-                        </SheetClose>
+                        <Link href="/admin" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                          Admin
+                        </Link>
                       )}
                       <button
-                        onClick={() => logout()}
+                        onClick={() => { setSheetOpen(false); logout(); }}
                         className="block w-full text-left px-3 py-2 text-sm text-destructive hover:bg-muted rounded-md"
                       >
                         Logout
@@ -186,12 +178,12 @@ export function Nav() {
                     </>
                   ) : (
                     <>
-                      <SheetClose render={<Link href="/login" />}>
-                        <span className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">Login</span>
-                      </SheetClose>
-                      <SheetClose render={<Link href="/register" />}>
-                        <span className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">Register</span>
-                      </SheetClose>
+                      <Link href="/login" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                        Login
+                      </Link>
+                      <Link href="/register" onClick={() => setSheetOpen(false)} className="block px-3 py-2 text-sm text-muted-foreground hover:bg-muted rounded-md">
+                        Register
+                      </Link>
                     </>
                   )}
                 </div>
