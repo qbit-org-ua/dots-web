@@ -110,10 +110,3 @@ export const CONTEST_STATUS: Record<string, string> = {
   FinishedFrozen: 'Finished (Frozen)',
 };
 
-export const STATUS_COLORS: Record<string, string> = {
-  Going: 'success',
-  Finished: 'neutral',
-  Wait: 'warning',
-  GoingFrozen: 'info',
-  FinishedFrozen: 'neutral',
-};

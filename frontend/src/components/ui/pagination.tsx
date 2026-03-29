@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PaginationProps {
   page: number;
@@ -23,41 +25,42 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
   }
 
   return (
-    <nav className="flex items-center justify-center gap-1 mt-4">
-      <button
+    <nav data-slot="pagination" className="flex items-center justify-center gap-1 mt-4" aria-label="Pagination">
+      <Button
+        variant="outline"
+        size="icon-sm"
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="px-3 py-1.5 text-sm rounded-md border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+        aria-label="Previous page"
       >
-        Prev
-      </button>
+        <ChevronLeft />
+      </Button>
       {pages.map((p, i) =>
         typeof p === 'string' ? (
-          <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">
+          <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground text-sm" aria-hidden="true">
             ...
           </span>
         ) : (
-          <button
+          <Button
             key={p}
+            variant={p === page ? 'default' : 'outline'}
+            size="sm"
             onClick={() => onPageChange(p)}
-            className={cn(
-              'px-3 py-1.5 text-sm rounded-md border',
-              p === page
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'border-border hover:bg-muted'
-            )}
+            aria-current={p === page ? 'page' : undefined}
           >
             {p}
-          </button>
+          </Button>
         )
       )}
-      <button
+      <Button
+        variant="outline"
+        size="icon-sm"
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="px-3 py-1.5 text-sm rounded-md border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+        aria-label="Next page"
       >
-        Next
-      </button>
+        <ChevronRight />
+      </Button>
     </nav>
   );
 }

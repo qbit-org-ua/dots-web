@@ -6,7 +6,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { formatDateTime, formatDuration } from '@/lib/utils';
-import { CONTEST_TYPES, REG_STATUS_LABELS, REG_MODE_LABELS, STATUS_COLORS } from '@/lib/constants';
+import { CONTEST_TYPES, REG_STATUS_LABELS, REG_MODE_LABELS } from '@/lib/constants';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -14,12 +14,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, UserPlus, LogOut as LogOutIcon, CheckCircle2 } from 'lucide-react';
 import type { ContestDetail, ContestData } from '@/types';
 
-const BADGE_VARIANT_MAP: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  success: 'default',
-  warning: 'secondary',
-  danger: 'destructive',
-  info: 'outline',
-  neutral: 'secondary',
+const STATUS_BADGE_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  Going: 'default',
+  Finished: 'secondary',
+  Wait: 'secondary',
+  GoingFrozen: 'outline',
+  FinishedFrozen: 'secondary',
 };
 
 function getRegModeLabel(options: number): string {
@@ -122,7 +122,7 @@ export default function ContestDetailPage() {
               onClick={() => registerMutation.mutate()}
               disabled={registerMutation.isPending}
               size="lg"
-              className="bg-green-600 hover:bg-green-700 text-white shadow-md"
+              className="shadow-md"
             >
               {registerMutation.isPending ? (
                 <><Loader2 className="size-4 mr-2 animate-spin" />Registering...</>
@@ -197,7 +197,7 @@ export default function ContestDetailPage() {
                 )}
                 <div className="flex items-center justify-between">
                   <dt className="text-muted-foreground">Status</dt>
-                  <dd><Badge variant={BADGE_VARIANT_MAP[STATUS_COLORS[status] || 'neutral'] || 'secondary'}>{status}</Badge></dd>
+                  <dd><Badge variant={STATUS_BADGE_VARIANT[status] || 'secondary'}>{status}</Badge></dd>
                 </div>
 
                 {/* Progress bar for elapsed/remaining */}

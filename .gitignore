@@ -11,6 +11,9 @@ frontend/next-env.d.ts
 frontend/tsconfig.tsbuildinfo
 frontend/.env.local
 
+# Next.js build (root-level, from running build in wrong dir)
+.next/
+
 # IDE
 .idea/
 .vscode/

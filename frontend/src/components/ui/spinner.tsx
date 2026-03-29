@@ -3,9 +3,9 @@ import { cn } from '@/lib/utils';
 
 export function Spinner({ className }: { className?: string }) {
   return (
-    <div className="flex items-center justify-center py-12">
+    <div data-slot="spinner" className="flex items-center justify-center py-12">
       <svg
-        className={cn('animate-spin h-8 w-8 text-primary', className)}
+        className={cn('animate-spin size-8 text-primary', className)}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
