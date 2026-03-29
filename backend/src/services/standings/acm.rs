@@ -270,11 +270,12 @@ pub async fn compute_acm_standings(
         });
     }
 
-    // Sort: problems solved DESC, then penalty ASC
+    // Sort: problems solved DESC, then penalty ASC, then alphabetical (matching PHP user_sort)
     user_rows.sort_by(|a, b| {
         b.total_solved
             .cmp(&a.total_solved)
             .then(a.penalty.cmp(&b.penalty))
+            .then(a.nickname.to_lowercase().cmp(&b.nickname.to_lowercase()))
     });
 
     // Assign places

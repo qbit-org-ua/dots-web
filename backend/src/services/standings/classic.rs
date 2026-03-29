@@ -217,14 +217,17 @@ pub async fn compute_classic_standings(
         });
     }
 
-    // Sort by total_score DESC
+    // Sort by total_score DESC, then alphabetical by nickname (matching PHP user_sort)
     user_rows.sort_by(|a, b| {
         let sa = Decimal::from_str_exact(&a.total_score).unwrap_or(Decimal::ZERO);
         let sb = Decimal::from_str_exact(&b.total_score).unwrap_or(Decimal::ZERO);
-        sb.cmp(&sa)
+        match sb.cmp(&sa) {
+            std::cmp::Ordering::Equal => a.nickname.to_lowercase().cmp(&b.nickname.to_lowercase()),
+            other => other,
+        }
     });
 
-    // Assign places (tied users get same place)
+    // Assign places (tied users get same place — same score = same place)
     let mut place = 1;
     for i in 0..user_rows.len() {
         if i > 0 && user_rows[i].total_score != user_rows[i - 1].total_score {
