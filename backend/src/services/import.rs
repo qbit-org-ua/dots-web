@@ -50,7 +50,7 @@ pub async fn import_solution(
             .bind(solution_id)
             .bind(test.test_no)
             .bind(test.result)
-            .bind(&test.score)
+            .bind(test.score)
             .bind(test.time_ms)
             .bind(test.memory_kb)
             .execute(pool)
@@ -62,9 +62,9 @@ pub async fn import_solution(
     let group_scores = load_problem_groups(upload_dir, problem_id).await;
 
     // Calculate aggregate results
-    let (test_result, test_score, is_passed) = if parse_result.compile_error_only {
-        (0, Decimal::ZERO, 0i8)
-    } else if parse_result.tests.is_empty() {
+    let (test_result, test_score, is_passed) = if parse_result.compile_error_only
+        || parse_result.tests.is_empty()
+    {
         (0, Decimal::ZERO, 0i8)
     } else {
         calculate_aggregates(&parse_result.tests, &group_scores)
@@ -76,7 +76,7 @@ pub async fn import_solution(
          compile_error = ? WHERE solution_id = ?"
     )
     .bind(test_result)
-    .bind(&test_score)
+    .bind(test_score)
     .bind(is_passed)
     .bind(&parse_result.compile_error)
     .bind(solution_id)

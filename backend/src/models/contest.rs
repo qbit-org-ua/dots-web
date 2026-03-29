@@ -79,8 +79,8 @@ pub fn parse_php_array(input: &str) -> std::collections::HashMap<String, String>
 
     let inner = &input[brace_start + 1..];
     // Remove trailing }
-    let inner = if inner.ends_with('}') {
-        &inner[..inner.len() - 1]
+    let inner = if let Some(stripped) = inner.strip_suffix('}') {
+        stripped
     } else {
         inner
     };

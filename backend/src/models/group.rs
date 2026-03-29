@@ -8,12 +8,14 @@ pub struct Group {
     pub group_description: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(sqlx::FromRow, Serialize, Deserialize, Clone, Debug)]
 pub struct UserGroupRelationship {
     pub user_id: Option<i32>,
     pub group_id: Option<i32>,
 }
 
+#[allow(dead_code)]
 #[derive(sqlx::FromRow, Serialize, Deserialize, Clone, Debug)]
 pub struct UserTeacherRelationship {
     pub user_id: Option<i32>,

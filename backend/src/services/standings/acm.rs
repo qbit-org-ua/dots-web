@@ -13,7 +13,9 @@ struct AcmSolutionRow {
     problem_id: u32,
     test_result: i32,
     contest_time: u32,
+    #[allow(dead_code)]
     is_passed: i8,
+    #[allow(dead_code)]
     posted_time: i32,
 }
 
@@ -94,10 +96,10 @@ pub async fn compute_acm_standings(
     let mut first_solve: HashMap<i32, (u32, i64)> = HashMap::new(); // problem_id -> (user_id, time)
 
     for sol in &solutions {
-        if let Some(ref gu) = group_users {
-            if !gu.contains(&sol.user_id) {
-                continue;
-            }
+        if let Some(ref gu) = group_users
+            && !gu.contains(&sol.user_id)
+        {
+            continue;
         }
 
         let entry = user_results
@@ -119,12 +121,12 @@ pub async fn compute_acm_standings(
 
         // Check if this submission is in frozen period
         let ct = sol.contest_time as i64;
-        if let Some(freeze) = freeze_after {
-            if ct > freeze {
-                entry.is_frozen = true;
-                entry.attempts += 1;
-                continue;
-            }
+        if let Some(freeze) = freeze_after
+            && ct > freeze
+        {
+            entry.is_frozen = true;
+            entry.attempts += 1;
+            continue;
         }
 
         if sol.test_result == 0 { // test_result == 0 means OK (accepted)
@@ -176,13 +178,13 @@ pub async fn compute_acm_standings(
 
     for (uid,) in &registered {
         let uid_u32 = *uid as u32;
-        if let Some(ref gu) = group_users {
-            if !gu.contains(&uid_u32) {
-                continue;
-            }
+        if let Some(ref gu) = group_users
+            && !gu.contains(&uid_u32)
+        {
+            continue;
         }
         user_results.entry(uid_u32).or_default();
-        if !user_info.contains_key(&uid_u32) {
+        if let std::collections::hash_map::Entry::Vacant(e) = user_info.entry(uid_u32) {
             let info: Option<(String, String)> = sqlx::query_as(
                 "SELECT nickname, FIO FROM labs_users WHERE user_id = ?"
             )
@@ -190,7 +192,7 @@ pub async fn compute_acm_standings(
             .fetch_optional(pool)
             .await?;
             if let Some((nick, fio)) = info {
-                user_info.insert(uid_u32, (nick, fio));
+                e.insert((nick, fio));
             }
         }
     }

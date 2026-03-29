@@ -121,14 +121,14 @@ pub async fn list_solutions(
         for s in &solutions {
             if let Some(cid) = s.contest_id {
                 let key = (cid, s.problem_id);
-                if !short_names.contains_key(&key) {
+                if let std::collections::hash_map::Entry::Vacant(e) = short_names.entry(key) {
                     let sn: Option<(String,)> = sqlx::query_as(
                         "SELECT short_name FROM labs_contest_problems WHERE contest_id = ? AND problem_id = ?"
                     )
                     .bind(cid).bind(s.problem_id)
                     .fetch_optional(&state.pool).await?;
                     if let Some((name,)) = sn {
-                        short_names.insert(key, name);
+                        e.insert(name);
                     }
                 }
             }

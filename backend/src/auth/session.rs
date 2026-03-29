@@ -112,7 +112,7 @@ pub async fn destroy_session(pool: &MySqlPool, session_id: &str) -> AppResult<()
 }
 
 /// Delete expired sessions
-pub async fn gc_sessions(pool: &MySqlPool) -> AppResult<()> {
+pub async fn _gc_sessions(pool: &MySqlPool) -> AppResult<()> {
     let now = chrono::Utc::now().timestamp() as i32;
     sqlx::query("DELETE FROM labs_sessions WHERE expire < ?")
         .bind(now)
@@ -126,10 +126,10 @@ pub async fn gc_sessions(pool: &MySqlPool) -> AppResult<()> {
 /// Then try PHP serialized: uid|i:1234;lt|i:1700000000;cid|i:5;
 fn parse_session_uid(data: &str) -> Option<u32> {
     // Try JSON
-    if let Ok(val) = serde_json::from_str::<serde_json::Value>(data) {
-        if let Some(uid) = val.get("uid").and_then(|v| v.as_u64()) {
-            return Some(uid as u32);
-        }
+    if let Ok(val) = serde_json::from_str::<serde_json::Value>(data)
+        && let Some(uid) = val.get("uid").and_then(|v| v.as_u64())
+    {
+        return Some(uid as u32);
     }
 
     // Try PHP session format: key|TYPE:VALUE;key|TYPE:VALUE;
@@ -137,12 +137,12 @@ fn parse_session_uid(data: &str) -> Option<u32> {
 }
 
 /// Parse contest_id from session_data
-pub fn parse_session_contest_id(data: &str) -> Option<i32> {
+pub fn _parse_session_contest_id(data: &str) -> Option<i32> {
     // Try JSON
-    if let Ok(val) = serde_json::from_str::<serde_json::Value>(data) {
-        if let Some(cid) = val.get("cid").and_then(|v| v.as_i64()) {
-            return Some(cid as i32);
-        }
+    if let Ok(val) = serde_json::from_str::<serde_json::Value>(data)
+        && let Some(cid) = val.get("cid").and_then(|v| v.as_i64())
+    {
+        return Some(cid as i32);
     }
 
     parse_php_session_data(data).get("cid").and_then(|v| v.parse().ok())

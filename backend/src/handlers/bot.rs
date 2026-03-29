@@ -1,5 +1,5 @@
 use axum::body::Bytes;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use base64::Engine;
@@ -11,9 +11,11 @@ use crate::services::file_storage;
 #[derive(Deserialize)]
 pub struct BotParams {
     pub action: Option<String>,
+    #[allow(dead_code)]
     pub id: Option<u32>,
     pub sid: Option<u32>,
     pub pid: Option<u32>,
+    #[allow(dead_code)]
     pub uid: Option<u32>,
 }
 
@@ -337,7 +339,7 @@ async fn handle_import(state: &AppState, params: &BotParams) -> Response {
 }
 
 pub fn router() -> axum::Router<AppState> {
-    use axum::routing::{get, post};
+    use axum::routing::get;
     axum::Router::new()
         .route("/", get(bot_handler).post(bot_handler))
 }

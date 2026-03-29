@@ -2,7 +2,7 @@ use axum::extract::State;
 use axum::http::header::SET_COOKIE;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::json;
 
 use crate::auth::middleware::{AppState, OptionalUser, RequireAuth};
@@ -41,11 +41,6 @@ pub struct RestoreResetRequest {
     pub email: String,
     pub code: String,
     pub password: String,
-}
-
-#[derive(Serialize)]
-pub struct AuthResponse {
-    pub user: User,
 }
 
 pub async fn login(

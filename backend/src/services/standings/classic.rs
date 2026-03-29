@@ -6,6 +6,8 @@ use super::*;
 use crate::error::AppResult;
 use crate::models::Contest;
 
+type UserScoreMap = HashMap<u32, HashMap<i32, (Decimal, bool, Option<u32>)>>;
+
 #[derive(sqlx::FromRow, Debug)]
 struct SolutionRow {
     user_id: u32,
@@ -94,14 +96,14 @@ pub async fn compute_classic_standings(
 
     // Build per-user score map
     // user_id -> problem_id -> (score, is_solved, solution_id)
-    let mut user_scores: HashMap<u32, HashMap<i32, (Decimal, bool, Option<u32>)>> = HashMap::new();
+    let mut user_scores: UserScoreMap = HashMap::new();
 
     for sol in &solutions {
         // Filter by group if needed
-        if let Some(ref gu) = group_users {
-            if !gu.contains(&sol.user_id) {
-                continue;
-            }
+        if let Some(ref gu) = group_users
+            && !gu.contains(&sol.user_id)
+        {
+            continue;
         }
 
         let pid_i32 = sol.problem_id as i32;
@@ -155,13 +157,13 @@ pub async fn compute_classic_standings(
 
     for (uid,) in &registered {
         let uid_u32 = *uid as u32;
-        if let Some(ref gu) = group_users {
-            if !gu.contains(&uid_u32) {
-                continue;
-            }
+        if let Some(ref gu) = group_users
+            && !gu.contains(&uid_u32)
+        {
+            continue;
         }
         user_scores.entry(uid_u32).or_default();
-        if !user_info.contains_key(&uid_u32) {
+        if let std::collections::hash_map::Entry::Vacant(e) = user_info.entry(uid_u32) {
             let info: Option<(String, String)> = sqlx::query_as(
                 "SELECT nickname, FIO FROM labs_users WHERE user_id = ?"
             )
@@ -169,7 +171,7 @@ pub async fn compute_classic_standings(
             .fetch_optional(pool)
             .await?;
             if let Some((nick, fio)) = info {
-                user_info.insert(uid_u32, (nick, fio));
+                e.insert((nick, fio));
             }
         }
     }
@@ -187,7 +189,7 @@ pub async fn compute_classic_standings(
         let mut total = Decimal::ZERO;
         let mut solved = 0i32;
 
-        for (pid, short_name, _title) in &problems {
+        for (pid, _short_name, _title) in &problems {
             let (score, is_solved, sol_id) = scores.get(pid).cloned().unwrap_or((Decimal::ZERO, false, None));
             total += score;
             if is_solved {

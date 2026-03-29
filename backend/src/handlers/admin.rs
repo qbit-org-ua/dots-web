@@ -7,7 +7,7 @@ use serde_json::json;
 
 use crate::auth::middleware::{AppState, RequireAdmin, RequireAuth};
 use crate::auth::password::encrypt_password;
-use crate::auth::session::{build_session_data, create_session, generate_session_id, write_session};
+use crate::auth::session::{create_session, generate_session_id, write_session};
 use crate::auth::{ACCESS_REGISTERED_USER};
 use crate::error::{AppError, AppResult};
 use crate::models::Group;
@@ -84,7 +84,7 @@ pub async fn get_logs(
 
 pub async fn su_user(
     State(state): State<AppState>,
-    RequireAdmin(admin): RequireAdmin,
+    RequireAdmin(_admin): RequireAdmin,
     Path(target_user_id): Path<u32>,
     jar: axum_extra::extract::CookieJar,
     headers: axum::http::HeaderMap,

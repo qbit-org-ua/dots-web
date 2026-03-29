@@ -313,7 +313,7 @@ pub async fn upload_avatar(
         return Err(AppError::AccessDenied);
     }
 
-    while let Some(field) = multipart.next_field().await.map_err(|e| AppError::BadRequest(e.to_string()))? {
+    if let Some(field) = multipart.next_field().await.map_err(|e| AppError::BadRequest(e.to_string()))? {
         let file_name = field.file_name().unwrap_or("avatar.jpg").to_string();
 
         // Validate extension
@@ -367,11 +367,11 @@ pub async fn delete_avatar(
     .fetch_optional(&state.pool)
     .await?;
 
-    if let Some((avatar_name,)) = avatar {
-        if !avatar_name.is_empty() {
-            let path = format!("{}/avatars/{}", state.config.upload_dir, avatar_name);
-            let _ = tokio::fs::remove_file(&path).await;
-        }
+    if let Some((avatar_name,)) = avatar
+        && !avatar_name.is_empty()
+    {
+        let path = format!("{}/avatars/{}", state.config.upload_dir, avatar_name);
+        let _ = tokio::fs::remove_file(&path).await;
     }
 
     sqlx::query("UPDATE labs_users SET avatar = '' WHERE user_id = ?")

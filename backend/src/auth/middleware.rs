@@ -109,45 +109,39 @@ impl FromRef<AppState> for AppState {
 
 /// Extract client IP from HeaderMap (convenience for handlers)
 pub fn extract_ip_from_headers(headers: &axum::http::HeaderMap) -> u32 {
-    if let Some(xff) = headers.get("x-forwarded-for") {
-        if let Ok(xff_str) = xff.to_str() {
-            if let Some(first_ip) = xff_str.split(',').next() {
-                if let Ok(ip) = first_ip.trim().parse::<std::net::Ipv4Addr>() {
-                    return ip_to_u32(ip);
-                }
-            }
-        }
+    if let Some(xff) = headers.get("x-forwarded-for")
+        && let Ok(xff_str) = xff.to_str()
+        && let Some(first_ip) = xff_str.split(',').next()
+        && let Ok(ip) = first_ip.trim().parse::<std::net::Ipv4Addr>()
+    {
+        return ip_to_u32(ip);
     }
-    if let Some(xri) = headers.get("x-real-ip") {
-        if let Ok(xri_str) = xri.to_str() {
-            if let Ok(ip) = xri_str.trim().parse::<std::net::Ipv4Addr>() {
-                return ip_to_u32(ip);
-            }
-        }
+    if let Some(xri) = headers.get("x-real-ip")
+        && let Ok(xri_str) = xri.to_str()
+        && let Ok(ip) = xri_str.trim().parse::<std::net::Ipv4Addr>()
+    {
+        return ip_to_u32(ip);
     }
     0
 }
 
 /// Extract client IP address from request headers/connection
-pub fn extract_ip(parts: &Parts) -> u32 {
+pub fn _extract_ip(parts: &Parts) -> u32 {
     // Try X-Forwarded-For first
-    if let Some(xff) = parts.headers.get("x-forwarded-for") {
-        if let Ok(xff_str) = xff.to_str() {
-            if let Some(first_ip) = xff_str.split(',').next() {
-                if let Ok(ip) = first_ip.trim().parse::<std::net::Ipv4Addr>() {
-                    return ip_to_u32(ip);
-                }
-            }
-        }
+    if let Some(xff) = parts.headers.get("x-forwarded-for")
+        && let Ok(xff_str) = xff.to_str()
+        && let Some(first_ip) = xff_str.split(',').next()
+        && let Ok(ip) = first_ip.trim().parse::<std::net::Ipv4Addr>()
+    {
+        return ip_to_u32(ip);
     }
 
     // Try X-Real-IP
-    if let Some(xri) = parts.headers.get("x-real-ip") {
-        if let Ok(xri_str) = xri.to_str() {
-            if let Ok(ip) = xri_str.trim().parse::<std::net::Ipv4Addr>() {
-                return ip_to_u32(ip);
-            }
-        }
+    if let Some(xri) = parts.headers.get("x-real-ip")
+        && let Ok(xri_str) = xri.to_str()
+        && let Ok(ip) = xri_str.trim().parse::<std::net::Ipv4Addr>()
+    {
+        return ip_to_u32(ip);
     }
 
     0

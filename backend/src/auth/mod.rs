@@ -4,6 +4,5 @@ pub mod password;
 pub mod session;
 
 pub use access::*;
-pub use middleware::*;
-pub use password::*;
-pub use session::*;
+// middleware, password, session are used via qualified paths (crate::auth::middleware::*, etc.)
+// and don't need wildcard re-exports here

@@ -465,7 +465,7 @@ pub async fn list_contest_problems(
         if let Some((pid, title, complexity)) = problem {
             let (user_result, user_score) = user_results
                 .get(&pid)
-                .map(|(r, s)| (Some(*r), Some(s.clone())))
+                .map(|(r, s)| (Some(*r), Some(*s)))
                 .unwrap_or((None, None));
             result.push(json!({
                 "problem_id": pid,

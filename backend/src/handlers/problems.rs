@@ -270,7 +270,7 @@ pub async fn upload_attachment(
         return Err(AppError::AccessDenied);
     }
 
-    while let Some(field) = multipart.next_field().await.map_err(|e| AppError::BadRequest(e.to_string()))? {
+    if let Some(field) = multipart.next_field().await.map_err(|e| AppError::BadRequest(e.to_string()))? {
         let file_name = field.file_name().unwrap_or("attachment").to_string();
         let data = field.bytes().await.map_err(|e| AppError::BadRequest(e.to_string()))?;
 

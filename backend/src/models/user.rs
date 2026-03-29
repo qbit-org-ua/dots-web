@@ -17,6 +17,7 @@ pub struct UserFull {
     pub user_id: u32,
     pub email: String,
     #[serde(skip_serializing)]
+    #[allow(dead_code)]
     pub password: String,
     pub nickname: String,
     pub birthday: Option<chrono::NaiveDate>,

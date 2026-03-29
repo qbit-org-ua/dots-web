@@ -22,6 +22,7 @@ pub struct ContestPage {
 pub enum PageStatus {
     Available,
     Locked,
+    #[allow(dead_code)]
     Hidden,
 }
 
@@ -72,7 +73,7 @@ pub fn compute_pages(
     status: &ContestStatus,
     user_registered: bool,
 ) -> Vec<ContestPage> {
-    let is_acm = contest.contest_type == "acm";
+    let _is_acm = contest.contest_type == "acm";
 
     let mut pages = Vec::new();
 
@@ -153,11 +154,7 @@ pub fn compute_pages(
             pages.push(ContestPage {
                 name: "standings".to_string(),
                 title: "Standings".to_string(),
-                status: if is_acm && matches!(status, ContestStatus::GoingFrozen) {
-                    PageStatus::Available // Available but frozen data
-                } else {
-                    PageStatus::Available
-                },
+                status: PageStatus::Available,
             });
         }
         ContestStatus::Finished | ContestStatus::FinishedFrozen => {
