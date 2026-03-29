@@ -129,13 +129,28 @@ export default function SolutionsPage() {
                         {s.solution_id}
                       </TableCell>
                       <TableCell>
-                        <Link
-                          href={s.contest_id ? `/contests/${s.contest_id}/problems/${s.problem_id}` : `/problems/${s.problem_id}`}
-                          className="text-primary hover:underline font-medium"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {s.short_name ? `${s.short_name}: ` : ''}{s.problem_title || `#${s.problem_id}`}
-                        </Link>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {s.contest_title && (
+                            <>
+                              <Link
+                                href={`/contests/${s.contest_id}`}
+                                className="text-muted-foreground hover:text-foreground text-xs truncate max-w-[180px]"
+                                onClick={(e) => e.stopPropagation()}
+                                title={s.contest_title}
+                              >
+                                {s.contest_title}
+                              </Link>
+                              <span className="text-muted-foreground/50">→</span>
+                            </>
+                          )}
+                          <Link
+                            href={s.contest_id ? `/contests/${s.contest_id}/problems/${s.problem_id}` : `/problems/${s.problem_id}`}
+                            className="text-primary hover:underline font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {s.short_name ? `${s.short_name}: ` : ''}{s.problem_title || `#${s.problem_id}`}
+                          </Link>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-mono">{s.test_score}</TableCell>
                       <TableCell>

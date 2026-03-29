@@ -139,6 +139,8 @@ export interface Solution {
   problem_title?: string;
   short_name?: string;
   nickname?: string;
+  fio?: string;
+  contest_title?: string;
 }
 
 export interface TestResult {
