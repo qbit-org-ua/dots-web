@@ -11,6 +11,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Pagination } from '@/components/ui/pagination';
 import { VerdictBadge } from '@/components/verdict-badge';
 import { FormInput } from '@/components/ui/form-field';
+import { Loader2 } from 'lucide-react';
 
 interface AdminSolution {
   solution_id: number;
@@ -96,53 +97,63 @@ export default function AdminSolutionsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>#</TableHead>
                   <TableHead>{t('admin.tableUser')}</TableHead>
                   <TableHead>{t('solutions.tableProblem')}</TableHead>
                   <TableHead>{t('admin.tableContest')}</TableHead>
-                  <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
                   <TableHead>{t('solutions.tableResult')}</TableHead>
+                  <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
                   <TableHead>{t('solutions.tableTime')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {solutions.map((s) => (
-                  <TableRow key={s.solution_id} className={cn(s.test_result === 0 && 'bg-green-500/5')}>
-                    <TableCell>
-                      <Link href={`/solutions/${s.solution_id}`} className="text-primary hover:underline font-mono text-xs">
-                        {s.solution_id}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/users/${s.user_id}`} className="text-primary hover:underline">
-                        <span className="text-muted-foreground text-xs">#{s.user_id}</span>{' '}
-                        <span className="font-medium">{s.nickname || '?'}</span>
-                        {s.fio && <span className="text-muted-foreground text-xs"> — {s.fio}</span>}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/problems/${s.problem_id}`} className="text-primary hover:underline">
-                        <span className="text-muted-foreground text-xs">#{s.problem_id}</span>{' '}
-                        <span className="font-medium">{s.problem_title || '?'}</span>
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {s.contest_id ? (
-                        <Link href={`/contests/${s.contest_id}`} className="text-primary hover:underline">
-                          <span className="text-muted-foreground text-xs">#{s.contest_id}</span>{' '}
-                          <span className="font-medium">{s.contest_title || '?'}</span>
+                {solutions.map((s) => {
+                  const pending = s.test_result < 0;
+                  const isOk = s.test_result === 0;
+                  return (
+                    <TableRow key={s.solution_id} className={cn(
+                      isOk && 'bg-green-500/5',
+                      pending && 'bg-blue-500/5',
+                    )}>
+                      <TableCell>
+                        <Link href={`/users/${s.user_id}`} className="text-primary hover:underline">
+                          <span className="text-muted-foreground text-xs">#{s.user_id}</span>{' '}
+                          <span className="font-medium">{s.nickname || '?'}</span>
+                          {s.fio && <span className="text-muted-foreground text-xs"> — {s.fio}</span>}
                         </Link>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{s.test_score}</TableCell>
-                    <TableCell>
-                      <VerdictBadge result={s.test_result} full />
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{formatDateTime(s.posted_time)}</TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        <Link href={`/problems/${s.problem_id}`} className="text-primary hover:underline">
+                          <span className="text-muted-foreground text-xs">#{s.problem_id}</span>{' '}
+                          <span className="font-medium">{s.problem_title || '?'}</span>
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        {s.contest_id ? (
+                          <Link href={`/contests/${s.contest_id}`} className="text-primary hover:underline">
+                            <span className="text-muted-foreground text-xs">#{s.contest_id}</span>{' '}
+                            <span className="font-medium">{s.contest_title || '?'}</span>
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {pending ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
+                            <Loader2 className="size-3 animate-spin" />
+                            {t('solutions.pendingTesting')}
+                          </span>
+                        ) : (
+                          <VerdictBadge result={s.test_result} full />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {pending ? '—' : s.test_score}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">{formatDateTime(s.posted_time)}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

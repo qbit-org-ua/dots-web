@@ -12,7 +12,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from '@/components/ui/pagination';
 import { VerdictBadge } from '@/components/verdict-badge';
-import { FileCode } from 'lucide-react';
+import { FileCode, Loader2 } from 'lucide-react';
 import type { Solution } from '@/types';
 
 function SolutionsTableSkeleton() {
@@ -21,20 +21,18 @@ function SolutionsTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-12"><Skeleton className="h-4 w-8" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-32" /></TableHead>
-            <TableHead><Skeleton className="h-4 w-12" /></TableHead>
+            <TableHead><Skeleton className="h-4 w-48" /></TableHead>
             <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+            <TableHead className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableHead>
             <TableHead><Skeleton className="h-4 w-24" /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {Array.from({ length: 8 }).map((_, i) => (
             <TableRow key={i}>
-              <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-52" /></TableCell>
               <TableCell><Skeleton className="h-5 w-20 rounded" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
               <TableCell><Skeleton className="h-4 w-28" /></TableCell>
             </TableRow>
           ))}
@@ -52,6 +50,8 @@ export default function SolutionsPage() {
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const problemId = searchParams.get('problem_id');
 
+  const hasPending = (sols: Solution[]) => sols.some(s => s.test_result < 0);
+
   const { data, isLoading } = useQuery({
     queryKey: ['solutions', page, problemId],
     queryFn: async () => {
@@ -61,6 +61,10 @@ export default function SolutionsPage() {
       return res.data;
     },
     enabled: !!user,
+    refetchInterval: (query) => {
+      const sols = query.state.data?.solutions;
+      return sols && hasPending(sols) ? 5000 : false;
+    },
   });
 
   if (!user) {
@@ -104,63 +108,75 @@ export default function SolutionsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">#</TableHead>
                     <TableHead>{t('solutions.tableProblem')}</TableHead>
-                    <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
                     <TableHead>{t('solutions.tableResult')}</TableHead>
+                    <TableHead className="text-right">{t('solutions.tableScore')}</TableHead>
                     <TableHead>{t('solutions.tablePosted')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {solutions.map((s) => (
-                    <TableRow
-                      key={s.solution_id}
-                      className={cn('cursor-pointer', s.test_result === 0 && 'bg-green-500/5')}
-                      onClick={() => {
-                        const cid = s.contest_id;
-                        if (cid) {
-                          router.push(`/contests/${cid}/solutions/${s.solution_id}`);
-                        } else {
-                          router.push(`/solutions/${s.solution_id}`);
-                        }
-                      }}
-                    >
-                      <TableCell className="text-muted-foreground font-mono text-xs">
-                        {s.solution_id}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {s.contest_title && (
-                            <>
-                              <Link
-                                href={`/contests/${s.contest_id}`}
-                                className="text-muted-foreground hover:text-foreground text-xs truncate max-w-[180px]"
-                                onClick={(e) => e.stopPropagation()}
-                                title={s.contest_title}
-                              >
-                                {s.contest_title}
-                              </Link>
-                              <span className="text-muted-foreground/50">→</span>
-                            </>
+                  {solutions.map((s) => {
+                    const pending = s.test_result < 0;
+                    const isOk = s.test_result === 0;
+                    return (
+                      <TableRow
+                        key={s.solution_id}
+                        className={cn(
+                          'cursor-pointer',
+                          isOk && 'bg-green-500/5',
+                          pending && 'bg-blue-500/5',
+                        )}
+                        onClick={() => {
+                          if (s.contest_id) {
+                            router.push(`/contests/${s.contest_id}/solutions/${s.solution_id}`);
+                          } else {
+                            router.push(`/solutions/${s.solution_id}`);
+                          }
+                        }}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {s.contest_title && (
+                              <>
+                                <Link
+                                  href={`/contests/${s.contest_id}`}
+                                  className="text-muted-foreground hover:text-foreground text-xs truncate max-w-[180px]"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={s.contest_title}
+                                >
+                                  {s.contest_title}
+                                </Link>
+                                <span className="text-muted-foreground/50">→</span>
+                              </>
+                            )}
+                            <Link
+                              href={s.contest_id ? `/contests/${s.contest_id}/problems/${s.problem_id}` : `/problems/${s.problem_id}`}
+                              className="text-primary hover:underline font-medium"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {s.short_name ? `${s.short_name}: ` : ''}{s.problem_title || `#${s.problem_id}`}
+                            </Link>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {pending ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
+                              <Loader2 className="size-3 animate-spin" />
+                              {t('solutions.pendingTesting')}
+                            </span>
+                          ) : (
+                            <VerdictBadge result={s.test_result} full />
                           )}
-                          <Link
-                            href={s.contest_id ? `/contests/${s.contest_id}/problems/${s.problem_id}` : `/problems/${s.problem_id}`}
-                            className="text-primary hover:underline font-medium"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {s.short_name ? `${s.short_name}: ` : ''}{s.problem_title || `#${s.problem_id}`}
-                          </Link>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-mono">{s.test_score}</TableCell>
-                      <TableCell>
-                        <VerdictBadge result={s.test_result} full />
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
-                        {formatDateTime(s.posted_time)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {pending ? '—' : s.test_score}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
+                          {formatDateTime(s.posted_time)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
