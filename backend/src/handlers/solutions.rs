@@ -232,8 +232,36 @@ pub async fn get_solution(
     .fetch_optional(&state.pool)
     .await?;
 
+    // compile_error contains test-by-test report which may reveal answers.
+    // Only show it to regular users if the result is a compilation error (CE = 0x0002).
+    // Admins, teachers, and contest creators can always see it.
+    let is_teacher = crate::auth::access::is_teacher(user.access);
+    let is_ce = (solution.test_result & 0x0002) != 0;
+
+    let can_see_report = is_admin || is_teacher || is_ce || {
+        // Check if user is the contest creator
+        if let Some(cid) = solution.contest_id {
+            let creator: Option<(i32,)> = sqlx::query_as(
+                "SELECT author_id FROM labs_contests WHERE contest_id = ?"
+            )
+            .bind(cid)
+            .fetch_optional(&state.pool)
+            .await?;
+            creator.map(|(aid,)| aid as u32 == user.user_id).unwrap_or(false)
+        } else {
+            false
+        }
+    };
+
+    let mut sol_json = serde_json::to_value(&solution).unwrap_or_default();
+    if !can_see_report
+        && let Some(obj) = sol_json.as_object_mut()
+    {
+        obj.insert("compile_error".to_string(), serde_json::Value::Null);
+    }
+
     Ok(Json(json!({
-        "solution": solution,
+        "solution": sol_json,
         "tests": tests,
         "nickname": nickname.map(|n| n.0).unwrap_or_default(),
         "problem_title": problem.map(|p| p.0).unwrap_or_default(),

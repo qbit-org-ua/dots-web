@@ -3,16 +3,11 @@ backend/target/
 backend/.env
 
 # Node.js
-frontend/node_modules/
-frontend/.next/
-frontend/.next-dev/
-frontend/.next-prod/
+node_modules
+.next
 frontend/next-env.d.ts
 frontend/tsconfig.tsbuildinfo
 frontend/.env.local
-
-# Next.js build (root-level, from running build in wrong dir)
-.next/
 
 # IDE
 .idea/
