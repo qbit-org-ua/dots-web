@@ -5,7 +5,7 @@ use axum::Json;
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::auth::middleware::{AppState, OptionalUser, RequireAuth};
+use crate::auth::middleware::{AppState, RequireAuth};
 use crate::error::{AppError, AppResult};
 use crate::models::Problem;
 
@@ -113,8 +113,31 @@ pub async fn list_problems(
 pub async fn get_problem(
     State(state): State<AppState>,
     Path(problem_id): Path<u32>,
-    OptionalUser(_user): OptionalUser,
+    RequireAuth(user): RequireAuth,
 ) -> AppResult<Json<serde_json::Value>> {
+    let is_privileged = crate::auth::access::is_teacher(user.access)
+        || crate::auth::access::is_admin(user.access);
+
+    // Regular users can only view problems in contests they're registered for
+    // and that have already started
+    if !is_privileged {
+        let allowed: Option<(i32,)> = sqlx::query_as(
+            "SELECT cp.contest_id FROM labs_contest_problems cp \
+             INNER JOIN labs_contest_users cu ON cp.contest_id = cu.contest_id \
+             INNER JOIN labs_contests c ON cp.contest_id = c.contest_id \
+             WHERE cp.problem_id = ? AND cu.user_id = ? AND c.start_time <= UNIX_TIMESTAMP() \
+             LIMIT 1"
+        )
+        .bind(problem_id)
+        .bind(user.user_id)
+        .fetch_optional(&state.pool)
+        .await?;
+
+        if allowed.is_none() {
+            return Err(AppError::AccessDenied);
+        }
+    }
+
     let problem: Option<Problem> = sqlx::query_as(
         "SELECT problem_id, title, description, attachment, complexity, \
          user_id, posted_time, tex, type, answer_options_count \
@@ -224,7 +247,28 @@ pub async fn update_problem(
 pub async fn get_attachment(
     State(state): State<AppState>,
     Path(problem_id): Path<u32>,
+    RequireAuth(user): RequireAuth,
 ) -> AppResult<impl IntoResponse> {
+    // Same access check as get_problem
+    let is_privileged = crate::auth::access::is_teacher(user.access)
+        || crate::auth::access::is_admin(user.access);
+    if !is_privileged {
+        let allowed: Option<(i32,)> = sqlx::query_as(
+            "SELECT cp.contest_id FROM labs_contest_problems cp \
+             INNER JOIN labs_contest_users cu ON cp.contest_id = cu.contest_id \
+             INNER JOIN labs_contests c ON cp.contest_id = c.contest_id \
+             WHERE cp.problem_id = ? AND cu.user_id = ? AND c.start_time <= UNIX_TIMESTAMP() \
+             LIMIT 1"
+        )
+        .bind(problem_id)
+        .bind(user.user_id)
+        .fetch_optional(&state.pool)
+        .await?;
+        if allowed.is_none() {
+            return Err(AppError::AccessDenied);
+        }
+    }
+
     let problem: Option<(String,)> = sqlx::query_as(
         "SELECT attachment FROM labs_problems WHERE problem_id = ?"
     )
@@ -238,7 +282,7 @@ pub async fn get_attachment(
     }
 
     // PHP stores attachments at var/problems/{problem_id} (no extension)
-    let path = format!("{}/var/problems/{}", state.config.upload_dir, problem_id);
+    let path = crate::services::file_storage::problem_attachment_path(&state.config.upload_dir, problem_id);
     let data = tokio::fs::read(&path).await.map_err(|_| AppError::NotFound)?;
 
     // Determine content type from the attachment filename extension

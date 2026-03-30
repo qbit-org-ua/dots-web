@@ -35,7 +35,7 @@ export function parseProblemDescription(
     if (isImage) {
       text = text.replace(
         /<attachment\s*\/?>/gi,
-        `<div class="my-4"><img src="/api/v1/problems/${problemId}/attachment" alt="${attachment}" class="max-w-full rounded-lg border border-border" /></div>`
+        `<div class="my-4"><img src="/api/v1/problems/${problemId}/attachment" alt="${attachment}" class="max-w-full" /></div>`
       );
     } else {
       text = text.replace(

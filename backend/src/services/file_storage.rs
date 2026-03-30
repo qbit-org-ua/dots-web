@@ -1,74 +1,55 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 /// Generate solution filename:
 /// {solutionId}_{problemId}.{userId}.{langId}{checkType}
-/// e.g. "197227_10007.18885.12F"
 pub fn solution_filename(sid: u32, pid: u32, uid: u32, lang: i32, check_type: &str) -> String {
-    format!(
-        "{}_{}.{}.{}{}",
-        sid, pid, uid, lang, check_type
-    )
+    format!("{}_{}.{}.{}{}", sid, pid, uid, lang, check_type)
 }
 
 /// Get full path to a solution source file.
-/// Path: <upload_dir>/sorted/<userId>/<problemId>/<filename>
-/// Fallback: <upload_dir>/var/sorted/<uid:04>/<pid:04>/<filename_padded> (legacy)
-pub fn solution_fullname(
-    upload_dir: &str,
-    sid: u32,
-    pid: u32,
-    uid: u32,
-    lang: i32,
-    check_type: &str,
-) -> String {
+/// Tries new path first, then legacy padded path, then flat sources dir.
+pub fn solution_fullname(upload_dir: &str, sid: u32, pid: u32, uid: u32, lang: i32, check_type: &str) -> PathBuf {
     let filename = solution_filename(sid, pid, uid, lang, check_type);
 
-    // Try new-style path first: sorted/<userId>/<problemId>/<filename>
-    let new_path = format!("{}/sorted/{}/{}/{}", upload_dir, uid, pid, filename);
-    if Path::new(&new_path).exists() {
+    // New-style: sorted/<userId>/<problemId>/<filename>
+    let new_path: PathBuf = [upload_dir, "sorted", &uid.to_string(), &pid.to_string(), &filename].iter().collect();
+    if new_path.exists() {
         return new_path;
     }
 
-    // Try legacy padded path: var/sorted/<uid:04>/<pid:04>/<filename_padded>
-    let padded_filename = format!(
-        "{:06}_{:04}.{:04}.{:02}{}",
-        sid, pid, uid, lang, check_type
-    );
-    let legacy_path = format!(
-        "{}/var/sorted/{:04}/{:04}/{}",
-        upload_dir, uid, pid, padded_filename
-    );
-    if Path::new(&legacy_path).exists() {
+    // Legacy padded: var/sorted/<uid:04>/<pid:04>/<filename_padded>
+    let padded_filename = format!("{:06}_{:04}.{:04}.{:02}{}", sid, pid, uid, lang, check_type);
+    let legacy_path: PathBuf = [upload_dir, "var", "sorted", &format!("{:04}", uid), &format!("{:04}", pid), &padded_filename].iter().collect();
+    if legacy_path.exists() {
         return legacy_path;
     }
 
-    // Fallback to sources dir
-    let sources_path = format!("{}/sources/{}", upload_dir, filename);
-    if Path::new(&sources_path).exists() {
+    // Flat sources fallback
+    let sources_path: PathBuf = [upload_dir, "sources", &filename].iter().collect();
+    if sources_path.exists() {
         return sources_path;
     }
 
-    // Return new-style path for creation
     new_path
 }
 
 /// Get the directory for saving a new solution source file.
-/// Path: <upload_dir>/sorted/<userId>/<problemId>/
-pub fn solution_dir(upload_dir: &str, uid: u32, pid: u32) -> String {
-    format!("{}/sorted/{}/{}", upload_dir, uid, pid)
+pub fn solution_dir(upload_dir: &str, uid: u32, pid: u32) -> PathBuf {
+    [upload_dir, "sorted", &uid.to_string(), &pid.to_string()].iter().collect()
 }
 
 /// Get full path to a result file.
-/// Try results/{sid/1000}/{sid:06} first, fallback results/{sid:06}
-pub fn results_fullname(upload_dir: &str, sid: u32) -> String {
-    let subdir = sid / 1000;
-    let new_path = format!("{}/var/results/{}/{:06}", upload_dir, subdir, sid);
-    if Path::new(&new_path).exists() {
+pub fn results_fullname(upload_dir: &str, sid: u32) -> PathBuf {
+    let subdir = (sid / 1000).to_string();
+    let fname = format!("{:06}", sid);
+
+    let new_path: PathBuf = [upload_dir, "var", "results", &subdir, &fname].iter().collect();
+    if new_path.exists() {
         return new_path;
     }
 
-    let flat_path = format!("{}/var/results/{:06}", upload_dir, sid);
-    if Path::new(&flat_path).exists() {
+    let flat_path: PathBuf = [upload_dir, "var", "results", &fname].iter().collect();
+    if flat_path.exists() {
         return flat_path;
     }
 
@@ -76,17 +57,25 @@ pub fn results_fullname(upload_dir: &str, sid: u32) -> String {
 }
 
 /// Get path for creating a new result file.
-pub fn results_fullname_create(upload_dir: &str, sid: u32) -> String {
-    let subdir = sid / 1000;
-    format!("{}/var/results/{}/{:06}", upload_dir, subdir, sid)
+pub fn results_fullname_create(upload_dir: &str, sid: u32) -> PathBuf {
+    let subdir = (sid / 1000).to_string();
+    let fname = format!("{:06}", sid);
+    [upload_dir, "var", "results", &subdir, &fname].iter().collect()
 }
 
-/// Get path to test archive for a problem
-pub fn test_archive_path(upload_dir: &str, pid: u32) -> String {
-    format!("{}/var/test_db/{}.tar.gz", upload_dir, pid)
+/// Get path to test archive for a problem.
+pub fn test_archive_path(upload_dir: &str, pid: u32) -> PathBuf {
+    let fname = format!("{}.tar.gz", pid);
+    [upload_dir, "var", "test_db", &fname].iter().collect()
 }
 
-/// Get path to problem config file
-pub fn problem_config_path(upload_dir: &str, pid: u32) -> String {
-    format!("{}/var/problems/{}.config", upload_dir, pid)
+/// Get path to problem attachment file.
+pub fn problem_attachment_path(upload_dir: &str, pid: u32) -> PathBuf {
+    [upload_dir, "var", "problems", &pid.to_string()].iter().collect()
+}
+
+/// Get path to problem config file.
+pub fn problem_config_path(upload_dir: &str, pid: u32) -> PathBuf {
+    let fname = format!("{}.config", pid);
+    [upload_dir, "var", "problems", &fname].iter().collect()
 }

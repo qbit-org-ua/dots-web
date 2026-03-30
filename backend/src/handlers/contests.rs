@@ -793,7 +793,7 @@ pub async fn submit_solution(
         &state.config.upload_dir, user.user_id, problem_id,
     );
     tokio::fs::create_dir_all(&sorted_dir).await.map_err(|e| AppError::Internal(e.into()))?;
-    let source_path = format!("{}/{}", sorted_dir, filename);
+    let source_path = sorted_dir.join(&filename);
     tokio::fs::write(&source_path, &source_data).await.map_err(|e| AppError::Internal(e.into()))?;
 
     // Update solution with filename and checksum
