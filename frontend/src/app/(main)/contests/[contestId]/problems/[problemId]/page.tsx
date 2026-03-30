@@ -7,18 +7,13 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useTranslation } from '@/lib/i18n';
 import { formatDate } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { parseProblemDescription } from '@/lib/parse-problem';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileCode, Download } from 'lucide-react';
+import { FileCode } from 'lucide-react';
 import type { Problem } from '@/types';
-
-function cleanDescription(html: string): string {
-  let cleaned = html.replace(/^#problem\s*/i, '');
-  cleaned = cleaned.replace(/<attachment[^>]*>(.*?)<\/attachment>/gi, '');
-  return cleaned;
-}
 
 export default function ContestProblemDetailPage() {
   const params = useParams();
@@ -26,7 +21,6 @@ export default function ContestProblemDetailPage() {
   const problemId = params.problemId as string;
   const { t } = useTranslation();
 
-  // Fetch problem detail
   const { data, isLoading } = useQuery({
     queryKey: ['problem', problemId],
     queryFn: async () => {
@@ -35,7 +29,6 @@ export default function ContestProblemDetailPage() {
     },
   });
 
-  // Fetch contest problems to get short_name
   const { data: cpData } = useQuery({
     queryKey: ['contest-problems', contestId],
     queryFn: async () => {
@@ -54,7 +47,7 @@ export default function ContestProblemDetailPage() {
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-4 w-48" />
-        <Skeleton className="h-64 w-full rounded-lg" />
+        <Skeleton className="h-96 w-full rounded-lg" />
       </div>
     );
   }
@@ -67,6 +60,12 @@ export default function ContestProblemDetailPage() {
       </div>
     );
   }
+
+  const renderedDescription = parseProblemDescription(
+    problem.description,
+    problem.problem_id,
+    problem.attachment || null,
+  );
 
   return (
     <div className="space-y-6">
@@ -93,39 +92,18 @@ export default function ContestProblemDetailPage() {
 
       <Card>
         <CardContent>
-          {problem.description ? (
+          {renderedDescription ? (
             <div
               className="prose dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: cleanDescription(problem.description) }}
+              dangerouslySetInnerHTML={{ __html: renderedDescription }}
             />
           ) : (
             <div className="text-center py-8 space-y-2">
               <p className="text-muted-foreground">{t('problems.noDescription')}</p>
-              {problem.attachment && (
-                <p className="text-muted-foreground text-sm">{t('problems.checkAttachment')}</p>
-              )}
             </div>
           )}
         </CardContent>
       </Card>
-
-      {problem.attachment && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t('problems.attachments')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <a
-              href={`/api/v1/problems/${problem.problem_id}/attachment`}
-              className="text-primary hover:underline flex items-center gap-2"
-              download
-            >
-              <Download className="size-4" />
-              {t('problems.downloadAttachment')}
-            </a>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

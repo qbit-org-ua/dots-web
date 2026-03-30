@@ -237,24 +237,34 @@ pub async fn get_attachment(
         return Err(AppError::NotFound);
     }
 
-    let path = format!("{}/attachments/{}", state.config.upload_dir, attachment);
+    // PHP stores attachments at var/problems/{problem_id} (no extension)
+    let path = format!("{}/var/problems/{}", state.config.upload_dir, problem_id);
     let data = tokio::fs::read(&path).await.map_err(|_| AppError::NotFound)?;
 
-    let content_type = if attachment.ends_with(".pdf") {
-        "application/pdf"
-    } else if attachment.ends_with(".zip") {
-        "application/zip"
+    // Determine content type from the attachment filename extension
+    let ext = attachment.rsplit('.').next().unwrap_or("").to_lowercase();
+    let content_type = match ext.as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "svg" => "image/svg+xml",
+        "webp" => "image/webp",
+        "pdf" => "application/pdf",
+        "zip" => "application/zip",
+        _ => "application/octet-stream",
+    };
+
+    // For images, serve inline (so <img> tags work); for others, force download
+    let disposition = if content_type.starts_with("image/") {
+        format!("inline; filename=\"{}\"", attachment)
     } else {
-        "application/octet-stream"
+        format!("attachment; filename=\"{}\"", attachment)
     };
 
     Ok((
         [
             (header::CONTENT_TYPE, content_type.to_string()),
-            (
-                header::CONTENT_DISPOSITION,
-                format!("attachment; filename=\"{}\"", attachment),
-            ),
+            (header::CONTENT_DISPOSITION, disposition),
         ],
         data,
     ))
