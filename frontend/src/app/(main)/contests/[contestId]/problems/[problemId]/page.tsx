@@ -61,6 +61,16 @@ export default function ContestProblemDetailPage() {
     );
   }
 
+  // Problem must belong to this contest
+  if (cpData && !cp) {
+    return (
+      <div className="text-center py-16 space-y-3">
+        <div className="text-4xl">🔍</div>
+        <p className="text-muted-foreground text-lg">{t('problems.notFound')}</p>
+      </div>
+    );
+  }
+
   const renderedDescription = parseProblemDescription(
     problem.description,
     problem.problem_id,
