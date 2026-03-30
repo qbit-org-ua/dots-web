@@ -434,13 +434,17 @@ pub async fn list_contest_problems(
     .fetch_all(&state.pool)
     .await?;
 
-    // If user is authenticated, get their best results per problem
+    // If user is authenticated, get the most recently submitted solution's result per problem
     let user_results: std::collections::HashMap<u32, (i32, rust_decimal::Decimal)> = if let Some(ref u) = user {
         let rows: Vec<(u32, i32, rust_decimal::Decimal)> = sqlx::query_as(
-            "SELECT problem_id, MAX(test_result) as best_result, MAX(test_score) as best_score \
-             FROM labs_solutions \
-             WHERE contest_id = ? AND user_id = ? AND test_result >= 0 \
-             GROUP BY problem_id"
+            "SELECT s.problem_id, s.test_result, s.test_score \
+             FROM labs_solutions s \
+             INNER JOIN ( \
+               SELECT problem_id, MAX(solution_id) as latest_id \
+               FROM labs_solutions \
+               WHERE contest_id = ? AND user_id = ? \
+               GROUP BY problem_id \
+             ) latest ON s.solution_id = latest.latest_id"
         )
         .bind(contest_id)
         .bind(u.user_id)
