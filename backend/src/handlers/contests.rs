@@ -1,4 +1,5 @@
 use axum::extract::{Multipart, Path, Query, State};
+use sqlx::Executor;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -769,22 +770,22 @@ pub async fn submit_solution(
     };
 
     // Insert solution
-    let result = sqlx::query(
-        "INSERT INTO labs_solutions (problem_id, user_id, contest_id, filename, checksum, \
-         lang_id, check_type, posted_time, checked_time, contest_time, \
-         test_result, test_score, score, module_val, compile_error, is_passed) \
-         VALUES (?, ?, ?, '', '', ?, 'F', ?, 0, ?, -1, 0, 0, 0, '', 0)"
-    )
-    .bind(problem_id)
-    .bind(user.user_id)
-    .bind(contest_id)
-    .bind(lang_id)
-    .bind(now)
-    .bind(contest_time)
-    .execute(&state.pool)
-    .await?;
+    tracing::info!("submit_solution: inserting problem_id={}, lang_id={}, contest_time={}", problem_id, lang_id, contest_time);
 
-    let solution_id = result.last_insert_id() as u32;
+    // Use raw_sql to avoid prepared statement issues with MariaDB
+    let insert_sql = format!(
+        "INSERT INTO labs_solutions \
+         (problem_id, user_id, contest_id, lang_id, posted_time, contest_time, test_result, is_passed) \
+         VALUES ({}, {}, {}, {}, {}, {}, -1, 1)",
+        problem_id, user.user_id, contest_id, lang_id, now, contest_time
+    );
+    // Use unprepared query to avoid MariaDB prepared statement type issues
+    state.pool.execute(sqlx::raw_sql(&insert_sql)).await?;
+
+    let row: (u64,) = sqlx::query_as("SELECT LAST_INSERT_ID()")
+        .fetch_one(&state.pool)
+        .await?;
+    let solution_id = row.0 as u32;
 
     // Save source file to <UPLOAD_DIR>/sorted/<userId>/<problemId>/<filename>
     let filename = crate::services::file_storage::solution_filename(
@@ -804,11 +805,11 @@ pub async fn submit_solution(
         hasher.update(&source_data);
         hex::encode(hasher.finalize())
     };
-    sqlx::query("UPDATE labs_solutions SET filename = ?, checksum = ? WHERE solution_id = ?")
-        .bind(&filename)
-        .bind(&checksum)
-        .execute(&state.pool)
-        .await?;
+    let update_sql = format!(
+        "UPDATE labs_solutions SET filename = '{}', checksum = '{}' WHERE solution_id = {}",
+        filename, checksum, solution_id
+    );
+    state.pool.execute(sqlx::raw_sql(&update_sql)).await?;
 
     Ok(Json(json!({ "ok": true, "solution_id": solution_id })))
 }
