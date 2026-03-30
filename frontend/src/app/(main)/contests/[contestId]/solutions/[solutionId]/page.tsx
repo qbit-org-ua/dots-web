@@ -7,15 +7,18 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { formatDateTime, formatDuration, verdictCode, verdictColor } from '@/lib/utils';
+import { cn, formatDateTime, formatDuration, verdictCode, verdictColor } from '@/lib/utils';
 import { decodeVerdictFull } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { CodeEditor, getMonacoLanguage } from '@/components/code-editor';
 import { VerdictBadge } from '@/components/verdict-badge';
-import { FileCode, ExternalLink, ArrowLeft, Code } from 'lucide-react';
+import { FileCode, ArrowLeft, Code, Clock, Hash, Globe, Loader2 } from 'lucide-react';
 import type { Solution, TestResult } from '@/types';
 
 function testRowBg(code: string): string {
@@ -76,6 +79,8 @@ export default function ContestSolutionDetailPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
 
+  const isPending = (s: Solution) => s.test_result < 0;
+
   const { data, isLoading } = useQuery({
     queryKey: ['solution', solutionId],
     queryFn: async () => {
@@ -83,6 +88,11 @@ export default function ContestSolutionDetailPage() {
       return res.data;
     },
     enabled: !!user,
+    // Auto-refresh while pending testing
+    refetchInterval: (query) => {
+      const sol = query.state.data?.solution;
+      return sol && sol.test_result < 0 ? 3000 : false;
+    },
   });
 
   if (!user) {
@@ -98,7 +108,7 @@ export default function ContestSolutionDetailPage() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-16 w-full rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-lg" />
         <Skeleton className="h-64 w-full rounded-lg" />
       </div>
     );
@@ -109,108 +119,120 @@ export default function ContestSolutionDetailPage() {
   const language: string = data?.language || '';
   const problemTitle: string = data?.problem_title || '';
   const shortName: string = data?.short_name || '';
-  const nickname: string = data?.nickname || '';
 
   if (!solution) {
     return <p className="text-center py-8 text-muted-foreground">{t('solutions.notFound')}</p>;
   }
 
-  const verdictStr = decodeVerdictFull(solution.test_result);
+  const pending = isPending(solution);
+  const hasResult = !pending && solution.test_result >= 0;
+  const isOk = solution.test_result === 0;
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{t('solutions.solutionId')} #{solution.solution_id}</h1>
-        <Link href={`/contests/${contestId}/solutions`} className="text-sm text-primary hover:underline flex items-center gap-1">
+        <Link href={`/contests/${contestId}/solutions`} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
           <ArrowLeft className="size-3.5" />
           {t('solutions.backToSolutions')}
         </Link>
-      </div>
-
-      {/* Result highlight */}
-      <Card>
-        <CardContent className="py-4">
-          <div className="flex items-center gap-4">
-            <VerdictBadge result={solution.test_result} full />
-            <span className="text-2xl font-bold">{solution.test_score}</span>
-            <span className="text-muted-foreground">{t('solutions.points')}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Solution info */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">{t('solutions.solutionInfo')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">{t('solutions.solutionId')}</dt>
-              <dd className="font-mono">{solution.solution_id}-{solution.problem_id}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">{t('solutions.tableProblem')}</dt>
-              <dd>
-                <Link href={`/contests/${contestId}/problems/${solution.problem_id}`} className="text-primary hover:underline font-medium">
-                  {shortName ? `${shortName}: ` : ''}{problemTitle || `#${solution.problem_id}`}
-                </Link>
-              </dd>
-            </div>
-            {nickname && (
-              <div className="flex justify-between border-b border-border pb-2">
-                <dt className="text-muted-foreground">{t('solutions.author')}</dt>
-                <dd>
-                  <Link href={`/users/${solution.user_id}`} className="text-primary hover:underline">{nickname}</Link>
-                </dd>
-              </div>
-            )}
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">{t('solutions.filename')}</dt>
-              <dd className="font-mono text-xs">{solution.filename || t('solutions.fromEditor')}</dd>
-            </div>
-            {solution.checksum && (
-              <div className="flex justify-between border-b border-border pb-2">
-                <dt className="text-muted-foreground">MD5</dt>
-                <dd className="font-mono text-xs">{solution.checksum}</dd>
-              </div>
-            )}
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">{t('solutions.tableLanguage')}</dt>
-              <dd className="font-medium">{language || `ID: ${solution.lang_id}`}</dd>
-            </div>
-            {solution.contest_time > 0 && (
-              <div className="flex justify-between border-b border-border pb-2">
-                <dt className="text-muted-foreground">{t('solutions.contestTime')}</dt>
-                <dd>{formatDuration(solution.contest_time)}</dd>
-              </div>
-            )}
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">{t('solutions.submitted')}</dt>
-              <dd>{formatDateTime(solution.posted_time)}</dd>
-            </div>
-            <div className="flex justify-between border-b border-border pb-2">
-              <dt className="text-muted-foreground">{t('solutions.checked')}</dt>
-              <dd>{solution.checked_time ? formatDateTime(solution.checked_time) : '-'}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
-
-      {/* Action links */}
-      <div className="flex flex-wrap gap-3 text-sm">
-        <Link
-          href={`/contests/${contestId}/solutions?problem_id=${solution.problem_id}`}
-          className="text-primary hover:underline flex items-center gap-1"
-        >
-          <ExternalLink className="size-3.5" />
-          {t('solutions.allForProblem')}
-        </Link>
-        <Link href={`/contests/${contestId}/submit?problem=${solution.problem_id}&lang=${solution.lang_id}`} className="text-primary hover:underline flex items-center gap-1">
+        <Link href={`/contests/${contestId}/submit?problem=${solution.problem_id}&lang=${solution.lang_id}`} className="text-sm text-primary hover:underline flex items-center gap-1">
           <FileCode className="size-3.5" />
           {t('solutions.submitAnother')}
         </Link>
       </div>
+
+      {/* Main card: result + metadata unified */}
+      <Card>
+        <CardContent className="pt-6">
+          {/* Result banner */}
+          <div className={cn(
+            'rounded-lg px-5 py-4 mb-6',
+            pending ? 'bg-blue-500/5 border border-blue-500/20' :
+            isOk ? 'bg-green-500/5 border border-green-500/20' :
+            'bg-destructive/5 border border-destructive/20'
+          )}>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                {pending ? (
+                  <>
+                    <Loader2 className="size-5 text-blue-500 animate-spin" />
+                    <span className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                      {t('solutions.pendingTesting')}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <VerdictBadge result={solution.test_result} full />
+                    <span className="text-2xl font-bold">{solution.test_score}</span>
+                    <span className="text-muted-foreground text-sm">{t('solutions.points')}</span>
+                  </>
+                )}
+              </div>
+              {pending && (
+                <span className="text-xs text-muted-foreground">{t('solutions.autoRefresh')}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Solution metadata — clean 2×2 grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Problem */}
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-muted p-2 shrink-0">
+                <FileCode className="size-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">{t('solutions.tableProblem')}</p>
+                <Link href={`/contests/${contestId}/problems/${solution.problem_id}`} className="text-sm font-medium text-primary hover:underline truncate block">
+                  {shortName ? `${shortName}: ` : ''}{problemTitle || `#${solution.problem_id}`}
+                </Link>
+              </div>
+            </div>
+
+            {/* Submission time */}
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-muted p-2 shrink-0">
+                <Clock className="size-4 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">{t('solutions.submitted')}</p>
+                <Tooltip>
+                  <TooltipTrigger className="text-sm font-medium text-left">
+                    {solution.contest_time > 0 ? formatDuration(solution.contest_time) : formatDateTime(solution.posted_time)}
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs space-y-1">
+                    <p>{t('solutions.submitted')}: {formatDateTime(solution.posted_time)}</p>
+                    <p>{t('solutions.checked')}: {solution.checked_time ? formatDateTime(solution.checked_time) : t('solutions.pendingTesting')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+
+            {/* Language */}
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-muted p-2 shrink-0">
+                <Globe className="size-4 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">{t('solutions.tableLanguage')}</p>
+                <p className="text-sm font-medium">{language || `ID: ${solution.lang_id}`}</p>
+              </div>
+            </div>
+
+            {/* Checksum */}
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-muted p-2 shrink-0">
+                <Hash className="size-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">MD5</p>
+                <p className="text-sm font-mono text-muted-foreground truncate">{solution.checksum || '—'}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Source code */}
       <SourceCodeViewer solutionId={solution.solution_id} language={language} t={t} />

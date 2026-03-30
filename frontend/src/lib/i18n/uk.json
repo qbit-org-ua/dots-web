@@ -140,6 +140,8 @@
     "allForProblem": "Всі мої розв'язки для цієї задачі",
     "submitAnother": "Відправити інший розв'язок",
     "compilationError": "Помилка компіляції",
+    "pendingTesting": "Очікує перевірки",
+    "autoRefresh": "Сторінка оновиться автоматично",
     "sourceUnavailable": "Програмний код недоступний.",
     "testResults": "Результати тестів",
     "testNo": "Тест",

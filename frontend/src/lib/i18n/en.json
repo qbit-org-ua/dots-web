@@ -140,6 +140,8 @@
     "allForProblem": "All my solutions for this problem",
     "submitAnother": "Submit another solution",
     "compilationError": "Compilation Error",
+    "pendingTesting": "Pending testing",
+    "autoRefresh": "Page will refresh automatically",
     "sourceUnavailable": "Source code is not available.",
     "testResults": "Test Results",
     "testNo": "Test",
