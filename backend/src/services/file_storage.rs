@@ -17,9 +17,9 @@ pub fn solution_fullname(upload_dir: &str, sid: u32, pid: u32, uid: u32, lang: i
         return new_path;
     }
 
-    // Legacy padded: var/sorted/<uid:04>/<pid:04>/<filename_padded>
+    // Legacy padded: sorted/<uid:04>/<pid:04>/<filename_padded>
     let padded_filename = format!("{:06}_{:04}.{:04}.{:02}{}", sid, pid, uid, lang, check_type);
-    let legacy_path: PathBuf = [upload_dir, "var", "sorted", &format!("{:04}", uid), &format!("{:04}", pid), &padded_filename].iter().collect();
+    let legacy_path: PathBuf = [upload_dir, "sorted", &format!("{:04}", uid), &format!("{:04}", pid), &padded_filename].iter().collect();
     if legacy_path.exists() {
         return legacy_path;
     }
@@ -43,12 +43,12 @@ pub fn results_fullname(upload_dir: &str, sid: u32) -> PathBuf {
     let subdir = (sid / 1000).to_string();
     let fname = format!("{:06}", sid);
 
-    let new_path: PathBuf = [upload_dir, "var", "results", &subdir, &fname].iter().collect();
+    let new_path: PathBuf = [upload_dir, "results", &subdir, &fname].iter().collect();
     if new_path.exists() {
         return new_path;
     }
 
-    let flat_path: PathBuf = [upload_dir, "var", "results", &fname].iter().collect();
+    let flat_path: PathBuf = [upload_dir, "results", &fname].iter().collect();
     if flat_path.exists() {
         return flat_path;
     }
@@ -60,22 +60,22 @@ pub fn results_fullname(upload_dir: &str, sid: u32) -> PathBuf {
 pub fn results_fullname_create(upload_dir: &str, sid: u32) -> PathBuf {
     let subdir = (sid / 1000).to_string();
     let fname = format!("{:06}", sid);
-    [upload_dir, "var", "results", &subdir, &fname].iter().collect()
+    [upload_dir, "results", &subdir, &fname].iter().collect()
 }
 
 /// Get path to test archive for a problem.
 pub fn test_archive_path(upload_dir: &str, pid: u32) -> PathBuf {
     let fname = format!("{}.tar.gz", pid);
-    [upload_dir, "var", "test_db", &fname].iter().collect()
+    [upload_dir, "test_db", &fname].iter().collect()
 }
 
 /// Get path to problem attachment file.
 pub fn problem_attachment_path(upload_dir: &str, pid: u32) -> PathBuf {
-    [upload_dir, "var", "problems", &pid.to_string()].iter().collect()
+    [upload_dir, "problems", &pid.to_string()].iter().collect()
 }
 
 /// Get path to problem config file.
 pub fn problem_config_path(upload_dir: &str, pid: u32) -> PathBuf {
     let fname = format!("{}.config", pid);
-    [upload_dir, "var", "problems", &fname].iter().collect()
+    [upload_dir, "problems", &fname].iter().collect()
 }

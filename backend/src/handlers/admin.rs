@@ -64,7 +64,7 @@ pub async fn get_logs(
 
     // Sanitize filename
     let safe_file = file.replace(['/', '\\'], "").replace("..", "");
-    let path = format!("{}/var/log/{}", state.config.upload_dir, safe_file);
+    let path = format!("{}/log/{}", state.config.upload_dir, safe_file);
 
     let content = match tokio::fs::read_to_string(&path).await {
         Ok(c) => c,

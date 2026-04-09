@@ -281,7 +281,7 @@ pub async fn get_attachment(
         return Err(AppError::NotFound);
     }
 
-    // PHP stores attachments at var/problems/{problem_id} (no extension)
+    // PHP stores attachments at problems/{problem_id} (no extension)
     let path = crate::services::file_storage::problem_attachment_path(&state.config.upload_dir, problem_id);
     let data = tokio::fs::read(&path).await.map_err(|_| AppError::NotFound)?;
 
