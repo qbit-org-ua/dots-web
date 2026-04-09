@@ -7,6 +7,7 @@ pub struct Config {
     pub frontend_url: String,
     pub listen_addr: String,
     pub bot_friends: Vec<(String, String)>,
+    pub nearai_api_key: String,
 }
 
 impl Config {
@@ -33,6 +34,8 @@ impl Config {
             listen_addr: env::var("LISTEN_ADDR")
                 .unwrap_or_else(|_| "0.0.0.0:3001".to_string()),
             bot_friends,
+            nearai_api_key: env::var("NEARAI_API_KEY")
+                .expect("NEARAI_API_KEY env variable is required for NEAR AI contests"),
         }
     }
 }

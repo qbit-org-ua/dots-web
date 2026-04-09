@@ -46,6 +46,10 @@ async fn main() -> anyhow::Result<()> {
         config: Arc::new(config.clone()),
     };
 
+    // Spawn LLM generation background job
+    services::llm_gen::spawn(pool.clone(), Arc::new(config.clone()));
+    tracing::info!("LLM generation job started");
+
     // Build CORS layer
     let frontend_url = config.frontend_url.clone();
     let cors = CorsLayer::new()
