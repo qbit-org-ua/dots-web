@@ -103,10 +103,11 @@ pub async fn su_user(
 
     // Create new session for target user
     let new_session_id = generate_session_id();
-    let user_agent = headers
+    let user_agent_full = headers
         .get("user-agent")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
+    let user_agent = if user_agent_full.len() > 80 { &user_agent_full[..80] } else { user_agent_full };
 
     create_session(&state.pool, &new_session_id, user_agent, 0, target_user_id).await?;
 
@@ -139,7 +140,7 @@ pub async fn su_back(
 
     // Read current session to get su_from
     let session: Option<(String,)> = sqlx::query_as(
-        "SELECT session_data FROM labs_sessions WHERE session_id = ?"
+        "SELECT CAST(session_data AS CHAR) FROM labs_sessions WHERE session_id = ?"
     )
     .bind(&session_id)
     .fetch_optional(&state.pool)

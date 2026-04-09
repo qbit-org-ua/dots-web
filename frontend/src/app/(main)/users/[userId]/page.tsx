@@ -52,7 +52,7 @@ function UserProfileSkeleton() {
 export default function UserProfilePage() {
   const params = useParams();
   const userId = params.userId as string;
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, suUser } = useAuth();
   const { t } = useTranslation();
 
   // ACCESS_READ_PROFILES (0x0004) - teachers/admins, or own profile
@@ -194,6 +194,14 @@ export default function UserProfilePage() {
               <Link href={`/solutions?user_id=${user.user_id}`} className="text-primary hover:underline">
                 {t('users.allSolutions')}
               </Link>
+              {isAdmin && !isOwnProfile && (
+                <button
+                  onClick={() => suUser(user.user_id)}
+                  className="text-yellow-600 dark:text-yellow-400 hover:underline"
+                >
+                  {t('admin.loginAsUser')}
+                </button>
+              )}
             </div>
           )}
         </div>

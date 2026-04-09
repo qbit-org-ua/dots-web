@@ -209,12 +209,33 @@ pub async fn register(
 }
 
 pub async fn me(
-    _state: State<AppState>,
+    State(state): State<AppState>,
     OptionalUser(user): OptionalUser,
+    jar: axum_extra::extract::CookieJar,
 ) -> AppResult<Json<serde_json::Value>> {
     match user {
-        Some(u) => Ok(Json(json!({ "user": u }))),
-        None => Ok(Json(json!({ "user": null }))),
+        Some(u) => {
+            // Check if in sudo mode by reading su_from from session
+            let su_mode = if let Some(cookie) = jar.get("DSID") {
+                let sess: Option<(String,)> = sqlx::query_as(
+                    "SELECT CAST(session_data AS CHAR) FROM labs_sessions WHERE session_id = ?"
+                )
+                .bind(cookie.value())
+                .fetch_optional(&state.pool)
+                .await
+                .ok()
+                .flatten();
+                sess.and_then(|(data,)| {
+                    serde_json::from_str::<serde_json::Value>(&data).ok()
+                })
+                .and_then(|v| v.get("su_from").and_then(|s| s.as_str().map(|_| true)))
+                .unwrap_or(false)
+            } else {
+                false
+            };
+            Ok(Json(json!({ "user": u, "su_mode": su_mode })))
+        }
+        None => Ok(Json(json!({ "user": null, "su_mode": false }))),
     }
 }
 

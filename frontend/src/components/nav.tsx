@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/sheet';
 
 export function Nav() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading, logout, suMode, suBack } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useTranslation();
@@ -37,6 +37,7 @@ export function Nav() {
   ];
 
   return (
+    <>
     <header className="bg-card border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
@@ -189,5 +190,21 @@ export function Nav() {
         </div>
       </div>
     </header>
+    {suMode && user && (
+      <div className="bg-yellow-500/15 border-b border-yellow-500/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-center justify-between text-xs">
+          <span className="text-yellow-700 dark:text-yellow-300 font-medium">
+            ⚠ {t('admin.sudoMode')}: <strong>{user.nickname}</strong> (#{user.user_id})
+          </span>
+          <button
+            onClick={() => suBack()}
+            className="px-2.5 py-0.5 rounded bg-yellow-600 text-white text-xs font-medium hover:bg-yellow-700 transition-colors"
+          >
+            {t('admin.sudoReturn')}
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

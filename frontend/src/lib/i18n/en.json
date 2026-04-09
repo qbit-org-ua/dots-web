@@ -290,6 +290,9 @@
   },
   "admin": {
     "dashboard": "Admin Dashboard",
+    "sudoMode": "Viewing as",
+    "sudoReturn": "Return to admin",
+    "loginAsUser": "Login as this user",
     "allUsers": "All Users",
     "allUsersDesc": "Browse and manage all users",
     "allProblems": "All Problems",

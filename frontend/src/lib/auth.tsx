@@ -7,9 +7,12 @@ import type { User } from '@/types';
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  suMode: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, nickname: string) => Promise<void>;
+  suUser: (userId: number) => Promise<void>;
+  suBack: () => Promise<void>;
   refetch: () => Promise<void>;
 }
 
@@ -18,13 +21,16 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [suMode, setSuMode] = useState(false);
 
   const fetchUser = useCallback(async () => {
     try {
       const res = await api.get('/api/v1/auth/me');
       setUser(res.data.user);
+      setSuMode(!!res.data.su_mode);
     } catch {
       setUser(null);
+      setSuMode(false);
     } finally {
       setIsLoading(false);
     }
@@ -37,11 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     const res = await api.post('/api/v1/auth/login', { login: email, password });
     setUser(res.data.user);
+    setSuMode(false);
   };
 
   const logout = async () => {
     await api.post('/api/v1/auth/logout');
     setUser(null);
+    setSuMode(false);
     if (typeof window !== 'undefined') {
       localStorage.removeItem('dots-theme');
     }
@@ -51,8 +59,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await api.post('/api/v1/auth/register', { email, nickname });
   };
 
+  const suUser = async (userId: number) => {
+    await api.post(`/api/v1/admin/su/${userId}`);
+    await fetchUser();
+  };
+
+  const suBack = async () => {
+    await api.post('/api/v1/admin/su/back');
+    await fetchUser();
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, register, refetch: fetchUser }}>
+    <AuthContext.Provider value={{ user, isLoading, suMode, login, logout, register, suUser, suBack, refetch: fetchUser }}>
       {children}
     </AuthContext.Provider>
   );
