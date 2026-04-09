@@ -1,12 +1,12 @@
-use axum::extract::{Multipart, Path, Query, State};
 use axum::Json;
+use axum::extract::{Multipart, Path, Query, State};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::auth::middleware::{AppState, OptionalUser, RequireAuth};
 use crate::auth::password::encrypt_password;
 use crate::error::{AppError, AppResult};
-use crate::models::user::{UserFull, USEROPT_HIDE_EMAIL, USEROPT_HIDE_PROFILE};
+use crate::models::user::{USEROPT_HIDE_EMAIL, USEROPT_HIDE_PROFILE, UserFull};
 
 #[derive(Deserialize)]
 pub struct PaginationParams {
@@ -85,7 +85,7 @@ pub async fn list_users(
         let pattern = format!("%{}%", search);
         let total: (i64,) = sqlx::query_as(
             "SELECT COUNT(*) FROM labs_users WHERE is_activated = 1 AND \
-             (nickname LIKE ? OR FIO LIKE ? OR email LIKE ?)"
+             (nickname LIKE ? OR FIO LIKE ? OR email LIKE ?)",
         )
         .bind(&pattern)
         .bind(&pattern)
@@ -97,7 +97,7 @@ pub async fn list_users(
             "SELECT user_id, nickname, city_name, region_name, country_name, FIO, avatar, options \
              FROM labs_users WHERE is_activated = 1 AND \
              (nickname LIKE ? OR FIO LIKE ? OR email LIKE ?) \
-             ORDER BY user_id ASC LIMIT ? OFFSET ?"
+             ORDER BY user_id ASC LIMIT ? OFFSET ?",
         )
         .bind(&pattern)
         .bind(&pattern)
@@ -109,16 +109,15 @@ pub async fn list_users(
 
         (users, total.0)
     } else {
-        let total: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM labs_users WHERE is_activated = 1"
-        )
-        .fetch_one(&state.pool)
-        .await?;
+        let total: (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM labs_users WHERE is_activated = 1")
+                .fetch_one(&state.pool)
+                .await?;
 
         let users: Vec<UserListItem> = sqlx::query_as(
             "SELECT user_id, nickname, city_name, region_name, country_name, FIO, avatar, options \
              FROM labs_users WHERE is_activated = 1 \
-             ORDER BY user_id ASC LIMIT ? OFFSET ?"
+             ORDER BY user_id ASC LIMIT ? OFFSET ?",
         )
         .bind(per_page)
         .bind(offset)
@@ -147,7 +146,7 @@ pub async fn get_user(
          is_activated, near, u_region, u_institution_type, u_institution_name, \
          u_specialty, u_kurs, u_teachers, u_about, u_near, u_certificate, \
          o_region, o_district, o_full_name, o_short_name, o_grade, o_teacher, o_cert \
-         FROM labs_users WHERE user_id = ?"
+         FROM labs_users WHERE user_id = ?",
     )
     .bind(user_id)
     .fetch_optional(&state.pool)
@@ -224,13 +223,12 @@ pub async fn update_user(
             return Err(AppError::InvalidNickname);
         }
         // Check uniqueness
-        let exists: Option<(u32,)> = sqlx::query_as(
-            "SELECT user_id FROM labs_users WHERE nickname = ? AND user_id != ?"
-        )
-        .bind(nickname)
-        .bind(user_id)
-        .fetch_optional(&state.pool)
-        .await?;
+        let exists: Option<(u32,)> =
+            sqlx::query_as("SELECT user_id FROM labs_users WHERE nickname = ? AND user_id != ?")
+                .bind(nickname)
+                .bind(user_id)
+                .fetch_optional(&state.pool)
+                .await?;
         if exists.is_some() {
             return Err(AppError::NicknameExists);
         }
@@ -252,7 +250,10 @@ pub async fn update_user(
         return Ok(Json(json!({ "ok": true })));
     }
 
-    let sql = format!("UPDATE labs_users SET {} WHERE user_id = ?", sets.join(", "));
+    let sql = format!(
+        "UPDATE labs_users SET {} WHERE user_id = ?",
+        sets.join(", ")
+    );
     let mut query = sqlx::query(&sql);
     for bind in &binds {
         query = query.bind(bind);
@@ -275,12 +276,11 @@ pub async fn change_password(
     }
 
     // Get user email for hashing
-    let user_row: (String, String) = sqlx::query_as(
-        "SELECT email, password FROM labs_users WHERE user_id = ?"
-    )
-    .bind(user_id)
-    .fetch_one(&state.pool)
-    .await?;
+    let user_row: (String, String) =
+        sqlx::query_as("SELECT email, password FROM labs_users WHERE user_id = ?")
+            .bind(user_id)
+            .fetch_one(&state.pool)
+            .await?;
 
     let (email, stored_hash) = user_row;
 
@@ -313,28 +313,43 @@ pub async fn upload_avatar(
         return Err(AppError::AccessDenied);
     }
 
-    if let Some(field) = multipart.next_field().await.map_err(|e| AppError::BadRequest(e.to_string()))? {
+    if let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::BadRequest(e.to_string()))?
+    {
         let file_name = field.file_name().unwrap_or("avatar.jpg").to_string();
 
         // Validate extension
         let ext = file_name.rsplit('.').next().unwrap_or("").to_lowercase();
         if !matches!(ext.as_str(), "jpg" | "jpeg" | "gif" | "png") {
-            return Err(AppError::BadRequest("Only JPG, GIF, PNG allowed".to_string()));
+            return Err(AppError::BadRequest(
+                "Only JPG, GIF, PNG allowed".to_string(),
+            ));
         }
 
-        let data = field.bytes().await.map_err(|e| AppError::BadRequest(e.to_string()))?;
+        let data = field
+            .bytes()
+            .await
+            .map_err(|e| AppError::BadRequest(e.to_string()))?;
 
         // Max 20KB
         if data.len() > 20 * 1024 {
-            return Err(AppError::BadRequest("Avatar must be under 20KB".to_string()));
+            return Err(AppError::BadRequest(
+                "Avatar must be under 20KB".to_string(),
+            ));
         }
 
         // Save to upload_dir/avatars/
         let avatar_filename = format!("{}.{}", user_id, ext);
         let avatar_dir = format!("{}/avatars", state.config.upload_dir);
-        tokio::fs::create_dir_all(&avatar_dir).await.map_err(|e| AppError::Internal(e.into()))?;
+        tokio::fs::create_dir_all(&avatar_dir)
+            .await
+            .map_err(|e| AppError::Internal(e.into()))?;
         let avatar_path = format!("{}/{}", avatar_dir, avatar_filename);
-        tokio::fs::write(&avatar_path, &data).await.map_err(|e| AppError::Internal(e.into()))?;
+        tokio::fs::write(&avatar_path, &data)
+            .await
+            .map_err(|e| AppError::Internal(e.into()))?;
 
         // Update DB
         sqlx::query("UPDATE labs_users SET avatar = ? WHERE user_id = ?")
@@ -360,12 +375,11 @@ pub async fn delete_avatar(
     }
 
     // Get current avatar
-    let avatar: Option<(String,)> = sqlx::query_as(
-        "SELECT avatar FROM labs_users WHERE user_id = ?"
-    )
-    .bind(user_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let avatar: Option<(String,)> =
+        sqlx::query_as("SELECT avatar FROM labs_users WHERE user_id = ?")
+            .bind(user_id)
+            .fetch_optional(&state.pool)
+            .await?;
 
     if let Some((avatar_name,)) = avatar
         && !avatar_name.is_empty()

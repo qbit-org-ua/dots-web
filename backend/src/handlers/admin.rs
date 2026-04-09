@@ -1,14 +1,14 @@
+use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::http::header::SET_COOKIE;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
 use serde::Deserialize;
 use serde_json::json;
 
+use crate::auth::ACCESS_REGISTERED_USER;
 use crate::auth::middleware::{AppState, RequireAdmin, RequireAuth};
 use crate::auth::password::encrypt_password;
 use crate::auth::session::{create_session, generate_session_id, write_session};
-use crate::auth::{ACCESS_REGISTERED_USER};
 use crate::error::{AppError, AppResult};
 use crate::models::Group;
 
@@ -90,16 +90,18 @@ pub async fn su_user(
     headers: axum::http::HeaderMap,
 ) -> AppResult<Response> {
     // Verify target user exists
-    let target: Option<(u32, String)> = sqlx::query_as(
-        "SELECT user_id, nickname FROM labs_users WHERE user_id = ?"
-    )
-    .bind(target_user_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let target: Option<(u32, String)> =
+        sqlx::query_as("SELECT user_id, nickname FROM labs_users WHERE user_id = ?")
+            .bind(target_user_id)
+            .fetch_optional(&state.pool)
+            .await?;
     let _target = target.ok_or(AppError::UserNotFound)?;
 
     // Save admin session ID for su_back
-    let old_session_id = jar.get("DSID").map(|c| c.value().to_string()).unwrap_or_default();
+    let old_session_id = jar
+        .get("DSID")
+        .map(|c| c.value().to_string())
+        .unwrap_or_default();
 
     // Create new session for target user
     let new_session_id = generate_session_id();
@@ -107,7 +109,11 @@ pub async fn su_user(
         .get("user-agent")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
-    let user_agent = if user_agent_full.len() > 80 { &user_agent_full[..80] } else { user_agent_full };
+    let user_agent = if user_agent_full.len() > 80 {
+        &user_agent_full[..80]
+    } else {
+        user_agent_full
+    };
 
     create_session(&state.pool, &new_session_id, user_agent, 0, target_user_id).await?;
 
@@ -126,7 +132,9 @@ pub async fn su_user(
     );
 
     let mut response = Json(json!({ "ok": true, "user_id": target_user_id })).into_response();
-    response.headers_mut().insert(SET_COOKIE, cookie.parse().unwrap());
+    response
+        .headers_mut()
+        .insert(SET_COOKIE, cookie.parse().unwrap());
 
     Ok(response)
 }
@@ -136,15 +144,17 @@ pub async fn su_back(
     RequireAuth(_user): RequireAuth,
     jar: axum_extra::extract::CookieJar,
 ) -> AppResult<Response> {
-    let session_id = jar.get("DSID").map(|c| c.value().to_string()).unwrap_or_default();
+    let session_id = jar
+        .get("DSID")
+        .map(|c| c.value().to_string())
+        .unwrap_or_default();
 
     // Read current session to get su_from
-    let session: Option<(String,)> = sqlx::query_as(
-        "SELECT CAST(session_data AS CHAR) FROM labs_sessions WHERE session_id = ?"
-    )
-    .bind(&session_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let session: Option<(String,)> =
+        sqlx::query_as("SELECT CAST(session_data AS CHAR) FROM labs_sessions WHERE session_id = ?")
+            .bind(&session_id)
+            .fetch_optional(&state.pool)
+            .await?;
 
     let session_data = session.ok_or(AppError::LoginFailed)?.0;
 
@@ -161,11 +171,14 @@ pub async fn su_back(
     // Restore original admin session cookie
     let cookie = format!(
         "DSID={}; Path=/; HttpOnly; SameSite=Lax; Max-Age={}",
-        original_session, 86400 * 30
+        original_session,
+        86400 * 30
     );
 
     let mut response = Json(json!({ "ok": true })).into_response();
-    response.headers_mut().insert(SET_COOKIE, cookie.parse().unwrap());
+    response
+        .headers_mut()
+        .insert(SET_COOKIE, cookie.parse().unwrap());
 
     Ok(response)
 }
@@ -182,12 +195,11 @@ pub async fn batch_register(
 
     for batch_user in &req.users {
         // Check if email already exists
-        let exists: Option<(u32,)> = sqlx::query_as(
-            "SELECT user_id FROM labs_users WHERE email = ?"
-        )
-        .bind(&batch_user.email)
-        .fetch_optional(&state.pool)
-        .await?;
+        let exists: Option<(u32,)> =
+            sqlx::query_as("SELECT user_id FROM labs_users WHERE email = ?")
+                .bind(&batch_user.email)
+                .fetch_optional(&state.pool)
+                .await?;
 
         if let Some((existing_id,)) = exists {
             // If contest_id provided, just register for contest
@@ -216,7 +228,7 @@ pub async fn batch_register(
 
         let result = sqlx::query(
             "INSERT INTO labs_users (email, password, nickname, access, created, is_activated, \
-             FIO, birthday) VALUES (?, ?, ?, ?, ?, 1, ?, '2000-01-01')"
+             FIO, birthday) VALUES (?, ?, ?, ?, ?, 1, ?, '2000-01-01')",
         )
         .bind(&batch_user.email)
         .bind(&hashed)
@@ -284,7 +296,7 @@ pub async fn create_group(
     Json(req): Json<GroupCreateRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
     let result = sqlx::query(
-        "INSERT INTO labs_groups (group_name, group_description, teacher_id) VALUES (?, ?, ?)"
+        "INSERT INTO labs_groups (group_name, group_description, teacher_id) VALUES (?, ?, ?)",
     )
     .bind(&req.group_name)
     .bind(req.group_description.as_deref().unwrap_or(""))
@@ -340,7 +352,7 @@ pub async fn update_group(
 
         for uid in user_ids {
             let _ = sqlx::query(
-                "INSERT INTO labs_user_group_relationships (user_id, group_id) VALUES (?, ?)"
+                "INSERT INTO labs_user_group_relationships (user_id, group_id) VALUES (?, ?)",
             )
             .bind(uid)
             .bind(group_id)
@@ -392,7 +404,9 @@ pub async fn rejudge(
     }
 
     if where_parts.is_empty() {
-        return Err(AppError::BadRequest("Must specify at least one filter".to_string()));
+        return Err(AppError::BadRequest(
+            "Must specify at least one filter".to_string(),
+        ));
     }
 
     let sql = format!(

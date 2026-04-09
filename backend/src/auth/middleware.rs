@@ -4,7 +4,7 @@ use axum_extra::extract::CookieJar;
 use sqlx::MySqlPool;
 use std::sync::Arc;
 
-use crate::auth::access::{has_access, ACCESS_SYSTEM_ADMIN};
+use crate::auth::access::{ACCESS_SYSTEM_ADMIN, has_access};
 use crate::auth::session::read_session;
 use crate::config::Config;
 use crate::error::AppError;
@@ -48,7 +48,7 @@ where
 
         let user: Option<User> = sqlx::query_as(
             "SELECT user_id, email, nickname, access, messages, is_activated \
-             FROM labs_users WHERE user_id = ?"
+             FROM labs_users WHERE user_id = ?",
         )
         .bind(user_id)
         .fetch_optional(&app_state.pool)

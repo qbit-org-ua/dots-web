@@ -29,7 +29,7 @@ pub async fn compute_classic_standings(
          FROM labs_contest_problems cp \
          LEFT JOIN labs_problems p ON cp.problem_id = p.problem_id \
          WHERE cp.contest_id = ? \
-         ORDER BY cp.short_name ASC"
+         ORDER BY cp.short_name ASC",
     )
     .bind(contest.contest_id)
     .fetch_all(pool)
@@ -37,12 +37,11 @@ pub async fn compute_classic_standings(
 
     // Get user filter for groups
     let group_users: Option<Vec<u32>> = if let Some(gid) = params.group_id {
-        let users: Vec<(i32,)> = sqlx::query_as(
-            "SELECT user_id FROM labs_user_group_relationships WHERE group_id = ?"
-        )
-        .bind(gid)
-        .fetch_all(pool)
-        .await?;
+        let users: Vec<(i32,)> =
+            sqlx::query_as("SELECT user_id FROM labs_user_group_relationships WHERE group_id = ?")
+                .bind(gid)
+                .fetch_all(pool)
+                .await?;
         Some(users.into_iter().map(|(uid,)| uid as u32).collect())
     } else {
         None
@@ -56,7 +55,7 @@ pub async fn compute_classic_standings(
          MAX(CASE WHEN s.test_result = 0 THEN 1 ELSE 0 END) as has_ok \
          FROM labs_solutions s \
          WHERE s.contest_id = ? AND s.test_result >= 0 \
-         GROUP BY s.user_id, s.problem_id"
+         GROUP BY s.user_id, s.problem_id",
     )
     .bind(contest.contest_id)
     .fetch_all(pool)
@@ -80,13 +79,15 @@ pub async fn compute_classic_standings(
         .bind(contest.contest_id)
         .fetch_all(pool)
         .await?;
-        rows.into_iter().map(|(uid, pid, sid)| ((uid, pid), sid)).collect()
+        rows.into_iter()
+            .map(|(uid, pid, sid)| ((uid, pid), sid))
+            .collect()
     };
 
     // Get problem max_scores from contest_problems for deciding which score to use
     let problem_max_scores: HashMap<i32, i32> = {
         let rows: Vec<(i32, i32)> = sqlx::query_as(
-            "SELECT problem_id, max_score FROM labs_contest_problems WHERE contest_id = ?"
+            "SELECT problem_id, max_score FROM labs_contest_problems WHERE contest_id = ?",
         )
         .bind(contest.contest_id)
         .fetch_all(pool)
@@ -118,10 +119,16 @@ pub async fn compute_classic_standings(
             sol.best_test_score
         };
 
-        user_scores
-            .entry(sol.user_id)
-            .or_default()
-            .insert(pid_i32, (score, sol.has_ok > 0, best_solution_ids.get(&(sol.user_id, sol.problem_id)).copied()));
+        user_scores.entry(sol.user_id).or_default().insert(
+            pid_i32,
+            (
+                score,
+                sol.has_ok > 0,
+                best_solution_ids
+                    .get(&(sol.user_id, sol.problem_id))
+                    .copied(),
+            ),
+        );
     }
 
     // Get user info
@@ -148,12 +155,11 @@ pub async fn compute_classic_standings(
     }
 
     // Also include registered users with no solutions
-    let registered: Vec<(i32,)> = sqlx::query_as(
-        "SELECT user_id FROM labs_contest_users WHERE contest_id = ?"
-    )
-    .bind(contest.contest_id)
-    .fetch_all(pool)
-    .await?;
+    let registered: Vec<(i32,)> =
+        sqlx::query_as("SELECT user_id FROM labs_contest_users WHERE contest_id = ?")
+            .bind(contest.contest_id)
+            .fetch_all(pool)
+            .await?;
 
     for (uid,) in &registered {
         let uid_u32 = *uid as u32;
@@ -164,12 +170,11 @@ pub async fn compute_classic_standings(
         }
         user_scores.entry(uid_u32).or_default();
         if let std::collections::hash_map::Entry::Vacant(e) = user_info.entry(uid_u32) {
-            let info: Option<(String, String)> = sqlx::query_as(
-                "SELECT nickname, FIO FROM labs_users WHERE user_id = ?"
-            )
-            .bind(uid)
-            .fetch_optional(pool)
-            .await?;
+            let info: Option<(String, String)> =
+                sqlx::query_as("SELECT nickname, FIO FROM labs_users WHERE user_id = ?")
+                    .bind(uid)
+                    .fetch_optional(pool)
+                    .await?;
             if let Some((nick, fio)) = info {
                 e.insert((nick, fio));
             }
@@ -190,7 +195,11 @@ pub async fn compute_classic_standings(
         let mut solved = 0i32;
 
         for (pid, _short_name, _title) in &problems {
-            let (score, is_solved, sol_id) = scores.get(pid).cloned().unwrap_or((Decimal::ZERO, false, None));
+            let (score, is_solved, sol_id) =
+                scores
+                    .get(pid)
+                    .cloned()
+                    .unwrap_or((Decimal::ZERO, false, None));
             total += score;
             if is_solved {
                 solved += 1;

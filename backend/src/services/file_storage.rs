@@ -8,18 +8,41 @@ pub fn solution_filename(sid: u32, pid: u32, uid: u32, lang: i32, check_type: &s
 
 /// Get full path to a solution source file.
 /// Tries new path first, then legacy padded path, then flat sources dir.
-pub fn solution_fullname(upload_dir: &str, sid: u32, pid: u32, uid: u32, lang: i32, check_type: &str) -> PathBuf {
+pub fn solution_fullname(
+    upload_dir: &str,
+    sid: u32,
+    pid: u32,
+    uid: u32,
+    lang: i32,
+    check_type: &str,
+) -> PathBuf {
     let filename = solution_filename(sid, pid, uid, lang, check_type);
 
     // New-style: sorted/<userId>/<problemId>/<filename>
-    let new_path: PathBuf = [upload_dir, "sorted", &uid.to_string(), &pid.to_string(), &filename].iter().collect();
+    let new_path: PathBuf = [
+        upload_dir,
+        "sorted",
+        &uid.to_string(),
+        &pid.to_string(),
+        &filename,
+    ]
+    .iter()
+    .collect();
     if new_path.exists() {
         return new_path;
     }
 
     // Legacy padded: sorted/<uid:04>/<pid:04>/<filename_padded>
     let padded_filename = format!("{:06}_{:04}.{:04}.{:02}{}", sid, pid, uid, lang, check_type);
-    let legacy_path: PathBuf = [upload_dir, "sorted", &format!("{:04}", uid), &format!("{:04}", pid), &padded_filename].iter().collect();
+    let legacy_path: PathBuf = [
+        upload_dir,
+        "sorted",
+        &format!("{:04}", uid),
+        &format!("{:04}", pid),
+        &padded_filename,
+    ]
+    .iter()
+    .collect();
     if legacy_path.exists() {
         return legacy_path;
     }
@@ -35,7 +58,9 @@ pub fn solution_fullname(upload_dir: &str, sid: u32, pid: u32, uid: u32, lang: i
 
 /// Get the directory for saving a new solution source file.
 pub fn solution_dir(upload_dir: &str, uid: u32, pid: u32) -> PathBuf {
-    [upload_dir, "sorted", &uid.to_string(), &pid.to_string()].iter().collect()
+    [upload_dir, "sorted", &uid.to_string(), &pid.to_string()]
+        .iter()
+        .collect()
 }
 
 /// Get full path to a result file.

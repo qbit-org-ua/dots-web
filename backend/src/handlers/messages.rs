@@ -1,5 +1,5 @@
-use axum::extract::{Path, Query, State};
 use axum::Json;
+use axum::extract::{Path, Query, State};
 use serde::Deserialize;
 use serde_json::json;
 
@@ -34,18 +34,17 @@ pub async fn list_messages(
 
     let (messages, total) = match folder {
         "sent" => {
-            let total: (i64,) = sqlx::query_as(
-                "SELECT COUNT(*) FROM labs_messages WHERE from_user_id = ?"
-            )
-            .bind(user.user_id)
-            .fetch_one(&state.pool)
-            .await?;
+            let total: (i64,) =
+                sqlx::query_as("SELECT COUNT(*) FROM labs_messages WHERE from_user_id = ?")
+                    .bind(user.user_id)
+                    .fetch_one(&state.pool)
+                    .await?;
 
             let messages: Vec<Message> = sqlx::query_as(
                 "SELECT message_id, from_user_id, to_user_id, in_reply_to, message_state, \
                  message_date, message_subj, message_text \
                  FROM labs_messages WHERE from_user_id = ? \
-                 ORDER BY message_date DESC LIMIT ? OFFSET ?"
+                 ORDER BY message_date DESC LIMIT ? OFFSET ?",
             )
             .bind(user.user_id)
             .bind(per_page)
@@ -57,18 +56,17 @@ pub async fn list_messages(
         }
         _ => {
             // inbox
-            let total: (i64,) = sqlx::query_as(
-                "SELECT COUNT(*) FROM labs_messages WHERE to_user_id = ?"
-            )
-            .bind(user.user_id)
-            .fetch_one(&state.pool)
-            .await?;
+            let total: (i64,) =
+                sqlx::query_as("SELECT COUNT(*) FROM labs_messages WHERE to_user_id = ?")
+                    .bind(user.user_id)
+                    .fetch_one(&state.pool)
+                    .await?;
 
             let messages: Vec<Message> = sqlx::query_as(
                 "SELECT message_id, from_user_id, to_user_id, in_reply_to, message_state, \
                  message_date, message_subj, message_text \
                  FROM labs_messages WHERE to_user_id = ? \
-                 ORDER BY message_date DESC LIMIT ? OFFSET ?"
+                 ORDER BY message_date DESC LIMIT ? OFFSET ?",
             )
             .bind(user.user_id)
             .bind(per_page)
@@ -83,13 +81,16 @@ pub async fn list_messages(
     // Get sender/recipient nicknames
     let mut enriched = Vec::new();
     for msg in &messages {
-        let other_id = if folder == "sent" { msg.to_user_id } else { msg.from_user_id };
-        let nickname: Option<(String,)> = sqlx::query_as(
-            "SELECT nickname FROM labs_users WHERE user_id = ?"
-        )
-        .bind(other_id)
-        .fetch_optional(&state.pool)
-        .await?;
+        let other_id = if folder == "sent" {
+            msg.to_user_id
+        } else {
+            msg.from_user_id
+        };
+        let nickname: Option<(String,)> =
+            sqlx::query_as("SELECT nickname FROM labs_users WHERE user_id = ?")
+                .bind(other_id)
+                .fetch_optional(&state.pool)
+                .await?;
 
         enriched.push(json!({
             "message_id": msg.message_id,
@@ -117,17 +118,18 @@ pub async fn create_message(
     Json(req): Json<CreateMessageRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
     // Find recipient by nickname
-    let recipient: Option<(u32,)> = sqlx::query_as(
-        "SELECT user_id FROM labs_users WHERE nickname = ?"
-    )
-    .bind(&req.to_nickname)
-    .fetch_optional(&state.pool)
-    .await?;
+    let recipient: Option<(u32,)> =
+        sqlx::query_as("SELECT user_id FROM labs_users WHERE nickname = ?")
+            .bind(&req.to_nickname)
+            .fetch_optional(&state.pool)
+            .await?;
 
     let to_id = recipient.ok_or(AppError::UserNotFound)?.0;
 
     if to_id == user.user_id {
-        return Err(AppError::BadRequest("Cannot send message to yourself".to_string()));
+        return Err(AppError::BadRequest(
+            "Cannot send message to yourself".to_string(),
+        ));
     }
 
     let now = chrono::Utc::now().timestamp() as i32;
@@ -135,7 +137,7 @@ pub async fn create_message(
     sqlx::query(
         "INSERT INTO labs_messages (from_user_id, to_user_id, in_reply_to, message_state, \
          message_date, message_subj, message_text) \
-         VALUES (?, ?, ?, 0, ?, ?, ?)"
+         VALUES (?, ?, ?, 0, ?, ?, ?)",
     )
     .bind(user.user_id)
     .bind(to_id)
@@ -163,7 +165,7 @@ pub async fn get_message(
     let message: Option<Message> = sqlx::query_as(
         "SELECT message_id, from_user_id, to_user_id, in_reply_to, message_state, \
          message_date, message_subj, message_text \
-         FROM labs_messages WHERE message_id = ?"
+         FROM labs_messages WHERE message_id = ?",
     )
     .bind(message_id)
     .fetch_optional(&state.pool)
@@ -191,19 +193,17 @@ pub async fn get_message(
     }
 
     // Get other user's nickname
-    let from_nick: Option<(String,)> = sqlx::query_as(
-        "SELECT nickname FROM labs_users WHERE user_id = ?"
-    )
-    .bind(message.from_user_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let from_nick: Option<(String,)> =
+        sqlx::query_as("SELECT nickname FROM labs_users WHERE user_id = ?")
+            .bind(message.from_user_id)
+            .fetch_optional(&state.pool)
+            .await?;
 
-    let to_nick: Option<(String,)> = sqlx::query_as(
-        "SELECT nickname FROM labs_users WHERE user_id = ?"
-    )
-    .bind(message.to_user_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let to_nick: Option<(String,)> =
+        sqlx::query_as("SELECT nickname FROM labs_users WHERE user_id = ?")
+            .bind(message.to_user_id)
+            .fetch_optional(&state.pool)
+            .await?;
 
     Ok(Json(json!({
         "message": message,
@@ -217,12 +217,11 @@ pub async fn mark_read(
     Path(message_id): Path<i32>,
     RequireAuth(user): RequireAuth,
 ) -> AppResult<Json<serde_json::Value>> {
-    let message: Option<(i32, i32)> = sqlx::query_as(
-        "SELECT to_user_id, message_state FROM labs_messages WHERE message_id = ?"
-    )
-    .bind(message_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let message: Option<(i32, i32)> =
+        sqlx::query_as("SELECT to_user_id, message_state FROM labs_messages WHERE message_id = ?")
+            .bind(message_id)
+            .fetch_optional(&state.pool)
+            .await?;
 
     let (to_user_id, message_state) = message.ok_or(AppError::MessageNotFound)?;
 

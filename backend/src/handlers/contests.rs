@@ -1,5 +1,5 @@
-use axum::extract::{Multipart, Path, Query, State};
 use axum::Json;
+use axum::extract::{Multipart, Path, Query, State};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -7,7 +7,7 @@ use crate::auth::middleware::{AppState, OptionalUser, RequireAdmin, RequireAuth}
 use crate::auth::session::{build_session_data, write_session};
 use crate::error::{AppError, AppResult};
 use crate::models::{Contest, ContestData, ContestProblem, ContestUser};
-use crate::services::contest_engine::{compute_pages, compute_status, ContestStatus};
+use crate::services::contest_engine::{ContestStatus, compute_pages, compute_status};
 
 #[derive(Deserialize)]
 pub struct ContestListParams {
@@ -141,17 +141,16 @@ pub async fn list_contests(
         let status = compute_status(contest);
 
         // Get user count
-        let (user_count,): (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM labs_contest_users WHERE contest_id = ?"
-        )
-        .bind(contest.contest_id)
-        .fetch_one(&state.pool)
-        .await?;
+        let (user_count,): (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM labs_contest_users WHERE contest_id = ?")
+                .bind(contest.contest_id)
+                .fetch_one(&state.pool)
+                .await?;
 
         // Check user registration status
         let reg_status = if let Some(ref u) = user {
             let reg: Option<(i32,)> = sqlx::query_as(
-                "SELECT reg_status FROM labs_contest_users WHERE contest_id = ? AND user_id = ?"
+                "SELECT reg_status FROM labs_contest_users WHERE contest_id = ? AND user_id = ?",
             )
             .bind(contest.contest_id)
             .bind(u.user_id)
@@ -212,7 +211,7 @@ pub async fn get_contest(
     // Check user registration
     let (user_registered, reg_status) = if let Some(ref u) = user {
         let reg: Option<(i32,)> = sqlx::query_as(
-            "SELECT reg_status FROM labs_contest_users WHERE contest_id = ? AND user_id = ?"
+            "SELECT reg_status FROM labs_contest_users WHERE contest_id = ? AND user_id = ?",
         )
         .bind(contest_id)
         .bind(u.user_id)
@@ -229,20 +228,18 @@ pub async fn get_contest(
     let pages = compute_pages(&contest, &status, user_registered);
 
     // Get problem count
-    let (problem_count,): (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM labs_contest_problems WHERE contest_id = ?"
-    )
-    .bind(contest_id)
-    .fetch_one(&state.pool)
-    .await?;
+    let (problem_count,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM labs_contest_problems WHERE contest_id = ?")
+            .bind(contest_id)
+            .fetch_one(&state.pool)
+            .await?;
 
     // Get user count
-    let (user_count,): (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM labs_contest_users WHERE contest_id = ?"
-    )
-    .bind(contest_id)
-    .fetch_one(&state.pool)
-    .await?;
+    let (user_count,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM labs_contest_users WHERE contest_id = ?")
+            .bind(contest_id)
+            .fetch_one(&state.pool)
+            .await?;
 
     Ok(Json(json!({
         "contest": contest,
@@ -288,12 +285,11 @@ pub async fn update_contest(
     Json(req): Json<ContestUpdateRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
     // Check contest exists
-    let exists: Option<(i32,)> = sqlx::query_as(
-        "SELECT contest_id FROM labs_contests WHERE contest_id = ?"
-    )
-    .bind(contest_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let exists: Option<(i32,)> =
+        sqlx::query_as("SELECT contest_id FROM labs_contests WHERE contest_id = ?")
+            .bind(contest_id)
+            .fetch_optional(&state.pool)
+            .await?;
     if exists.is_none() {
         return Err(AppError::ContestNotFound);
     }
@@ -335,7 +331,10 @@ pub async fn update_contest(
     }
 
     if !sets.is_empty() {
-        let sql = format!("UPDATE labs_contests SET {} WHERE contest_id = ?", sets.join(", "));
+        let sql = format!(
+            "UPDATE labs_contests SET {} WHERE contest_id = ?",
+            sets.join(", ")
+        );
         let mut query = sqlx::query(&sql);
         for b in &binds {
             query = query.bind(b);
@@ -428,39 +427,42 @@ pub async fn list_contest_problems(
 ) -> AppResult<Json<serde_json::Value>> {
     let problems: Vec<ContestProblem> = sqlx::query_as(
         "SELECT contest_id, short_name, problem_id, max_score, is_with_code_review, user_id \
-         FROM labs_contest_problems WHERE contest_id = ? ORDER BY short_name ASC"
+         FROM labs_contest_problems WHERE contest_id = ? ORDER BY short_name ASC",
     )
     .bind(contest_id)
     .fetch_all(&state.pool)
     .await?;
 
     // If user is authenticated, get the most recently submitted solution's result per problem
-    let user_results: std::collections::HashMap<u32, (i32, rust_decimal::Decimal)> = if let Some(ref u) = user {
-        let rows: Vec<(u32, i32, rust_decimal::Decimal)> = sqlx::query_as(
-            "SELECT s.problem_id, s.test_result, s.test_score \
+    let user_results: std::collections::HashMap<u32, (i32, rust_decimal::Decimal)> =
+        if let Some(ref u) = user {
+            let rows: Vec<(u32, i32, rust_decimal::Decimal)> = sqlx::query_as(
+                "SELECT s.problem_id, s.test_result, s.test_score \
              FROM labs_solutions s \
              INNER JOIN ( \
                SELECT problem_id, MAX(solution_id) as latest_id \
                FROM labs_solutions \
                WHERE contest_id = ? AND user_id = ? \
                GROUP BY problem_id \
-             ) latest ON s.solution_id = latest.latest_id"
-        )
-        .bind(contest_id)
-        .bind(u.user_id)
-        .fetch_all(&state.pool)
-        .await?;
-        rows.into_iter().map(|(pid, res, score)| (pid, (res, score))).collect()
-    } else {
-        std::collections::HashMap::new()
-    };
+             ) latest ON s.solution_id = latest.latest_id",
+            )
+            .bind(contest_id)
+            .bind(u.user_id)
+            .fetch_all(&state.pool)
+            .await?;
+            rows.into_iter()
+                .map(|(pid, res, score)| (pid, (res, score)))
+                .collect()
+        } else {
+            std::collections::HashMap::new()
+        };
 
     // Get problem details
     let mut result = Vec::new();
     for cp in &problems {
         let problem: Option<(u32, String, i32)> = sqlx::query_as(
             "SELECT problem_id, title, complexity \
-             FROM labs_problems WHERE problem_id = ?"
+             FROM labs_problems WHERE problem_id = ?",
         )
         .bind(cp.problem_id)
         .fetch_optional(&state.pool)
@@ -493,30 +495,26 @@ pub async fn add_contest_problem(
     Json(req): Json<AddProblemRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
     // Verify contest exists
-    let exists: Option<(i32,)> = sqlx::query_as(
-        "SELECT contest_id FROM labs_contests WHERE contest_id = ?"
-    )
-    .bind(contest_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let exists: Option<(i32,)> =
+        sqlx::query_as("SELECT contest_id FROM labs_contests WHERE contest_id = ?")
+            .bind(contest_id)
+            .fetch_optional(&state.pool)
+            .await?;
     if exists.is_none() {
         return Err(AppError::ContestNotFound);
     }
 
     // Count existing problems to auto-generate short_name
-    let (count,): (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM labs_contest_problems WHERE contest_id = ?"
-    )
-    .bind(contest_id)
-    .fetch_one(&state.pool)
-    .await?;
+    let (count,): (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM labs_contest_problems WHERE contest_id = ?")
+            .bind(contest_id)
+            .fetch_one(&state.pool)
+            .await?;
 
-    let short_name = req
-        .short_name
-        .unwrap_or_else(|| {
-            let letter = (b'A' + count as u8) as char;
-            letter.to_string()
-        });
+    let short_name = req.short_name.unwrap_or_else(|| {
+        let letter = (b'A' + count as u8) as char;
+        letter.to_string()
+    });
 
     let max_score = req.max_score.unwrap_or(100);
 
@@ -539,13 +537,11 @@ pub async fn remove_contest_problem(
     Path((contest_id, problem_id)): Path<(i32, i32)>,
     RequireAdmin(_user): RequireAdmin,
 ) -> AppResult<Json<serde_json::Value>> {
-    sqlx::query(
-        "DELETE FROM labs_contest_problems WHERE contest_id = ? AND problem_id = ?"
-    )
-    .bind(contest_id)
-    .bind(problem_id)
-    .execute(&state.pool)
-    .await?;
+    sqlx::query("DELETE FROM labs_contest_problems WHERE contest_id = ? AND problem_id = ?")
+        .bind(contest_id)
+        .bind(problem_id)
+        .execute(&state.pool)
+        .await?;
 
     Ok(Json(json!({ "ok": true })))
 }
@@ -557,7 +553,7 @@ pub async fn list_contest_users(
 ) -> AppResult<Json<serde_json::Value>> {
     let users: Vec<ContestUser> = sqlx::query_as(
         "SELECT contest_id, user_id, reg_status, reg_data \
-         FROM labs_contest_users WHERE contest_id = ? ORDER BY user_id ASC"
+         FROM labs_contest_users WHERE contest_id = ? ORDER BY user_id ASC",
     )
     .bind(contest_id)
     .fetch_all(&state.pool)
@@ -567,7 +563,7 @@ pub async fn list_contest_users(
     let mut result = Vec::new();
     for cu in &users {
         let user: Option<(u32, String, String, String)> = sqlx::query_as(
-            "SELECT user_id, nickname, FIO, u_institution_name FROM labs_users WHERE user_id = ?"
+            "SELECT user_id, nickname, FIO, u_institution_name FROM labs_users WHERE user_id = ?",
         )
         .bind(cu.user_id)
         .fetch_optional(&state.pool)
@@ -647,13 +643,22 @@ pub async fn list_contest_solutions(
     if let Some(pid) = params.problem_id {
         lq = lq.bind(pid);
     }
-    let solutions = lq.bind(per_page).bind(offset).fetch_all(&state.pool).await?;
+    let solutions = lq
+        .bind(per_page)
+        .bind(offset)
+        .fetch_all(&state.pool)
+        .await?;
 
     // Enrich with problem titles and short names from contest_problems
     let problem_ids: Vec<u32> = solutions.iter().map(|s| s.problem_id).collect();
-    let mut problem_info: std::collections::HashMap<u32, (String, String)> = std::collections::HashMap::new();
+    let mut problem_info: std::collections::HashMap<u32, (String, String)> =
+        std::collections::HashMap::new();
     if !problem_ids.is_empty() {
-        let placeholders = problem_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let placeholders = problem_ids
+            .iter()
+            .map(|_| "?")
+            .collect::<Vec<_>>()
+            .join(",");
         let sql = format!(
             "SELECT cp.problem_id, cp.short_name, COALESCE(p.title, '') \
              FROM labs_contest_problems cp \
@@ -672,17 +677,22 @@ pub async fn list_contest_solutions(
         }
     }
 
-    let enriched: Vec<serde_json::Value> = solutions.iter().map(|s| {
-        let (short_name, problem_title) = problem_info.get(&s.problem_id)
-            .cloned()
-            .unwrap_or_default();
-        let mut val = serde_json::to_value(s).unwrap_or_default();
-        if let Some(obj) = val.as_object_mut() {
-            obj.insert("short_name".to_string(), serde_json::json!(short_name));
-            obj.insert("problem_title".to_string(), serde_json::json!(problem_title));
-        }
-        val
-    }).collect();
+    let enriched: Vec<serde_json::Value> = solutions
+        .iter()
+        .map(|s| {
+            let (short_name, problem_title) =
+                problem_info.get(&s.problem_id).cloned().unwrap_or_default();
+            let mut val = serde_json::to_value(s).unwrap_or_default();
+            if let Some(obj) = val.as_object_mut() {
+                obj.insert("short_name".to_string(), serde_json::json!(short_name));
+                obj.insert(
+                    "problem_title".to_string(),
+                    serde_json::json!(problem_title),
+                );
+            }
+            val
+        })
+        .collect();
 
     Ok(Json(json!({
         "solutions": enriched,
@@ -711,50 +721,78 @@ pub async fn submit_solution(
     let status = compute_status(&contest);
     let is_admin = crate::auth::access::is_admin(user.access);
     if !matches!(status, ContestStatus::Going | ContestStatus::GoingFrozen) && !is_admin {
-        return Err(AppError::BadRequest("Contest is not currently running".to_string()));
+        return Err(AppError::BadRequest(
+            "Contest is not currently running".to_string(),
+        ));
     }
 
     // Check user is registered
     let reg: Option<(i32,)> = sqlx::query_as(
-        "SELECT reg_status FROM labs_contest_users WHERE contest_id = ? AND user_id = ?"
+        "SELECT reg_status FROM labs_contest_users WHERE contest_id = ? AND user_id = ?",
     )
     .bind(contest_id)
     .bind(user.user_id)
     .fetch_optional(&state.pool)
     .await?;
     if reg.is_none() && !is_admin {
-        return Err(AppError::BadRequest("Not registered for this contest".to_string()));
+        return Err(AppError::BadRequest(
+            "Not registered for this contest".to_string(),
+        ));
     }
 
     let mut problem_id: Option<u32> = None;
     let mut lang_id: Option<u32> = None;
     let mut source_data: Option<Vec<u8>> = None;
 
-    while let Some(field) = multipart.next_field().await.map_err(|e| AppError::BadRequest(e.to_string()))? {
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::BadRequest(e.to_string()))?
+    {
         let name = field.name().unwrap_or("").to_string();
         match name.as_str() {
             "problem_id" => {
-                let text = field.text().await.map_err(|e| AppError::BadRequest(e.to_string()))?;
-                problem_id = Some(text.parse().map_err(|_| AppError::BadRequest("Invalid problem_id".to_string()))?);
+                let text = field
+                    .text()
+                    .await
+                    .map_err(|e| AppError::BadRequest(e.to_string()))?;
+                problem_id = Some(
+                    text.parse()
+                        .map_err(|_| AppError::BadRequest("Invalid problem_id".to_string()))?,
+                );
             }
             "lang_id" | "lang" => {
-                let text = field.text().await.map_err(|e| AppError::BadRequest(e.to_string()))?;
-                lang_id = Some(text.parse().map_err(|_| AppError::BadRequest("Invalid lang_id".to_string()))?);
+                let text = field
+                    .text()
+                    .await
+                    .map_err(|e| AppError::BadRequest(e.to_string()))?;
+                lang_id = Some(
+                    text.parse()
+                        .map_err(|_| AppError::BadRequest("Invalid lang_id".to_string()))?,
+                );
             }
             "source" | "file" => {
-                source_data = Some(field.bytes().await.map_err(|e| AppError::BadRequest(e.to_string()))?.to_vec());
+                source_data = Some(
+                    field
+                        .bytes()
+                        .await
+                        .map_err(|e| AppError::BadRequest(e.to_string()))?
+                        .to_vec(),
+                );
             }
             _ => {}
         }
     }
 
-    let problem_id = problem_id.ok_or_else(|| AppError::BadRequest("problem_id required".to_string()))?;
+    let problem_id =
+        problem_id.ok_or_else(|| AppError::BadRequest("problem_id required".to_string()))?;
     let lang_id = lang_id.ok_or_else(|| AppError::BadRequest("lang_id required".to_string()))?;
-    let source_data = source_data.ok_or_else(|| AppError::BadRequest("source file required".to_string()))?;
+    let source_data =
+        source_data.ok_or_else(|| AppError::BadRequest("source file required".to_string()))?;
 
     // Verify problem is in contest
     let cp: Option<(String,)> = sqlx::query_as(
-        "SELECT short_name FROM labs_contest_problems WHERE contest_id = ? AND problem_id = ?"
+        "SELECT short_name FROM labs_contest_problems WHERE contest_id = ? AND problem_id = ?",
     )
     .bind(contest_id)
     .bind(problem_id)
@@ -791,14 +829,24 @@ pub async fn submit_solution(
 
     // Save source file to <UPLOAD_DIR>/sorted/<userId>/<problemId>/<filename>
     let filename = crate::services::file_storage::solution_filename(
-        solution_id, problem_id, user.user_id, lang_id as i32, "F",
+        solution_id,
+        problem_id,
+        user.user_id,
+        lang_id as i32,
+        "F",
     );
     let sorted_dir = crate::services::file_storage::solution_dir(
-        &state.config.upload_dir, user.user_id, problem_id,
+        &state.config.upload_dir,
+        user.user_id,
+        problem_id,
     );
-    tokio::fs::create_dir_all(&sorted_dir).await.map_err(|e| AppError::Internal(e.into()))?;
+    tokio::fs::create_dir_all(&sorted_dir)
+        .await
+        .map_err(|e| AppError::Internal(e.into()))?;
     let source_path = sorted_dir.join(&filename);
-    tokio::fs::write(&source_path, &source_data).await.map_err(|e| AppError::Internal(e.into()))?;
+    tokio::fs::write(&source_path, &source_data)
+        .await
+        .map_err(|e| AppError::Internal(e.into()))?;
 
     // Update solution with filename and checksum
     let checksum = {
@@ -829,9 +877,15 @@ pub fn router() -> axum::Router<AppState> {
         .route("/{contest_id}/logout", post(logout_contest))
         .route("/{contest_id}/problems", get(list_contest_problems))
         .route("/{contest_id}/problems", post(add_contest_problem))
-        .route("/{contest_id}/problems/{problem_id}", delete(remove_contest_problem))
+        .route(
+            "/{contest_id}/problems/{problem_id}",
+            delete(remove_contest_problem),
+        )
         .route("/{contest_id}/users", get(list_contest_users))
         .route("/{contest_id}/solutions", get(list_contest_solutions))
         .route("/{contest_id}/solutions", post(submit_solution))
-        .route("/{contest_id}/standings", get(crate::handlers::standings::get_standings))
+        .route(
+            "/{contest_id}/standings",
+            get(crate::handlers::standings::get_standings),
+        )
 }

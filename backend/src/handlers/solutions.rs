@@ -1,7 +1,7 @@
+use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::http::header;
 use axum::response::IntoResponse;
-use axum::Json;
 use serde::Deserialize;
 use serde_json::json;
 
@@ -83,7 +83,11 @@ pub async fn list_solutions(
     for v in &bind_values {
         lq = lq.bind(v);
     }
-    let solutions = lq.bind(per_page).bind(offset).fetch_all(&state.pool).await?;
+    let solutions = lq
+        .bind(per_page)
+        .bind(offset)
+        .fetch_all(&state.pool)
+        .await?;
 
     // Enrich all solutions with problem/contest/user names
     if !solutions.is_empty() {
@@ -95,10 +99,19 @@ pub async fn list_solutions(
         // Problem titles
         let mut problem_info: HashMap<u32, String> = HashMap::new();
         if !problem_ids.is_empty() {
-            let ph = problem_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-            let sql = format!("SELECT problem_id, title FROM labs_problems WHERE problem_id IN ({})", ph);
+            let ph = problem_ids
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
+            let sql = format!(
+                "SELECT problem_id, title FROM labs_problems WHERE problem_id IN ({})",
+                ph
+            );
             let mut q = sqlx::query_as::<_, (u32, String)>(&sql);
-            for id in &problem_ids { q = q.bind(id); }
+            for id in &problem_ids {
+                q = q.bind(id);
+            }
             for (pid, title) in q.fetch_all(&state.pool).await? {
                 problem_info.insert(pid, title);
             }
@@ -107,10 +120,19 @@ pub async fn list_solutions(
         // Contest titles
         let mut contest_info: HashMap<i32, String> = HashMap::new();
         if !contest_ids.is_empty() {
-            let ph = contest_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-            let sql = format!("SELECT contest_id, title FROM labs_contests WHERE contest_id IN ({})", ph);
+            let ph = contest_ids
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
+            let sql = format!(
+                "SELECT contest_id, title FROM labs_contests WHERE contest_id IN ({})",
+                ph
+            );
             let mut q = sqlx::query_as::<_, (i32, String)>(&sql);
-            for id in &contest_ids { q = q.bind(id); }
+            for id in &contest_ids {
+                q = q.bind(id);
+            }
             for (cid, title) in q.fetch_all(&state.pool).await? {
                 contest_info.insert(cid, title);
             }
@@ -140,33 +162,47 @@ pub async fn list_solutions(
             let user_ids: Vec<u32> = solutions.iter().map(|s| s.user_id).collect();
             if !user_ids.is_empty() {
                 let ph = user_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-                let sql = format!("SELECT user_id, nickname, FIO FROM labs_users WHERE user_id IN ({})", ph);
+                let sql = format!(
+                    "SELECT user_id, nickname, FIO FROM labs_users WHERE user_id IN ({})",
+                    ph
+                );
                 let mut q = sqlx::query_as::<_, (u32, String, String)>(&sql);
-                for id in &user_ids { q = q.bind(id); }
+                for id in &user_ids {
+                    q = q.bind(id);
+                }
                 for (uid, nick, fio) in q.fetch_all(&state.pool).await? {
                     user_info.insert(uid, (nick, fio));
                 }
             }
         }
 
-        let enriched: Vec<serde_json::Value> = solutions.iter().map(|s| {
-            let mut val = serde_json::to_value(s).unwrap_or_default();
-            if let Some(obj) = val.as_object_mut() {
-                obj.insert("problem_title".to_string(), json!(problem_info.get(&s.problem_id).cloned().unwrap_or_default()));
-                if let Some(cid) = s.contest_id {
-                    obj.insert("contest_title".to_string(), json!(contest_info.get(&cid).cloned().unwrap_or_default()));
-                    if let Some(sn) = short_names.get(&(cid, s.problem_id)) {
-                        obj.insert("short_name".to_string(), json!(sn));
+        let enriched: Vec<serde_json::Value> = solutions
+            .iter()
+            .map(|s| {
+                let mut val = serde_json::to_value(s).unwrap_or_default();
+                if let Some(obj) = val.as_object_mut() {
+                    obj.insert(
+                        "problem_title".to_string(),
+                        json!(problem_info.get(&s.problem_id).cloned().unwrap_or_default()),
+                    );
+                    if let Some(cid) = s.contest_id {
+                        obj.insert(
+                            "contest_title".to_string(),
+                            json!(contest_info.get(&cid).cloned().unwrap_or_default()),
+                        );
+                        if let Some(sn) = short_names.get(&(cid, s.problem_id)) {
+                            obj.insert("short_name".to_string(), json!(sn));
+                        }
+                    }
+                    if is_admin {
+                        let (nick, fio) = user_info.get(&s.user_id).cloned().unwrap_or_default();
+                        obj.insert("nickname".to_string(), json!(nick));
+                        obj.insert("fio".to_string(), json!(fio));
                     }
                 }
-                if is_admin {
-                    let (nick, fio) = user_info.get(&s.user_id).cloned().unwrap_or_default();
-                    obj.insert("nickname".to_string(), json!(nick));
-                    obj.insert("fio".to_string(), json!(fio));
-                }
-            }
-            val
-        }).collect();
+                val
+            })
+            .collect();
 
         return Ok(Json(json!({
             "solutions": enriched,
@@ -194,7 +230,7 @@ pub async fn get_solution(
          checksum, lang_id, check_type, posted_time, checked_time, \
          contest_time, test_result, test_score, score, module_val, \
          compile_error, is_passed \
-         FROM labs_solutions WHERE solution_id = ?"
+         FROM labs_solutions WHERE solution_id = ?",
     )
     .bind(solution_id)
     .fetch_optional(&state.pool)
@@ -210,27 +246,25 @@ pub async fn get_solution(
     // Get test results
     let tests: Vec<Test> = sqlx::query_as(
         "SELECT test_id, solution_id, test_no, test_result, test_score, test_time, test_mem \
-         FROM labs_tests WHERE solution_id = ? ORDER BY test_no ASC"
+         FROM labs_tests WHERE solution_id = ? ORDER BY test_no ASC",
     )
     .bind(solution_id)
     .fetch_all(&state.pool)
     .await?;
 
     // Get user nickname
-    let nickname: Option<(String,)> = sqlx::query_as(
-        "SELECT nickname FROM labs_users WHERE user_id = ?"
-    )
-    .bind(solution.user_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let nickname: Option<(String,)> =
+        sqlx::query_as("SELECT nickname FROM labs_users WHERE user_id = ?")
+            .bind(solution.user_id)
+            .fetch_optional(&state.pool)
+            .await?;
 
     // Get problem title
-    let problem: Option<(String,)> = sqlx::query_as(
-        "SELECT title FROM labs_problems WHERE problem_id = ?"
-    )
-    .bind(solution.problem_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let problem: Option<(String,)> =
+        sqlx::query_as("SELECT title FROM labs_problems WHERE problem_id = ?")
+            .bind(solution.problem_id)
+            .fetch_optional(&state.pool)
+            .await?;
 
     // compile_error contains test-by-test report which may reveal answers.
     // Only show it to regular users if the result is a compilation error (CE = 0x0002).
@@ -241,22 +275,21 @@ pub async fn get_solution(
     let can_see_report = is_admin || is_teacher || is_ce || {
         // Check if user is the contest creator
         if let Some(cid) = solution.contest_id {
-            let creator: Option<(i32,)> = sqlx::query_as(
-                "SELECT author_id FROM labs_contests WHERE contest_id = ?"
-            )
-            .bind(cid)
-            .fetch_optional(&state.pool)
-            .await?;
-            creator.map(|(aid,)| aid as u32 == user.user_id).unwrap_or(false)
+            let creator: Option<(i32,)> =
+                sqlx::query_as("SELECT author_id FROM labs_contests WHERE contest_id = ?")
+                    .bind(cid)
+                    .fetch_optional(&state.pool)
+                    .await?;
+            creator
+                .map(|(aid,)| aid as u32 == user.user_id)
+                .unwrap_or(false)
         } else {
             false
         }
     };
 
     let mut sol_json = serde_json::to_value(&solution).unwrap_or_default();
-    if !can_see_report
-        && let Some(obj) = sol_json.as_object_mut()
-    {
+    if !can_see_report && let Some(obj) = sol_json.as_object_mut() {
         obj.insert("compile_error".to_string(), serde_json::Value::Null);
     }
 
@@ -275,26 +308,23 @@ pub async fn update_score(
     RequireAdmin(_user): RequireAdmin,
     Json(req): Json<UpdateScoreRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let exists: Option<(u32,)> = sqlx::query_as(
-        "SELECT solution_id FROM labs_solutions WHERE solution_id = ?"
-    )
-    .bind(solution_id)
-    .fetch_optional(&state.pool)
-    .await?;
+    let exists: Option<(u32,)> =
+        sqlx::query_as("SELECT solution_id FROM labs_solutions WHERE solution_id = ?")
+            .bind(solution_id)
+            .fetch_optional(&state.pool)
+            .await?;
     if exists.is_none() {
         return Err(AppError::SolutionNotFound);
     }
 
     let is_passed = req.is_passed.unwrap_or(0);
 
-    sqlx::query(
-        "UPDATE labs_solutions SET score = ?, is_passed = ? WHERE solution_id = ?"
-    )
-    .bind(&req.score)
-    .bind(is_passed)
-    .bind(solution_id)
-    .execute(&state.pool)
-    .await?;
+    sqlx::query("UPDATE labs_solutions SET score = ?, is_passed = ? WHERE solution_id = ?")
+        .bind(&req.score)
+        .bind(is_passed)
+        .bind(solution_id)
+        .execute(&state.pool)
+        .await?;
 
     Ok(Json(json!({ "ok": true })))
 }
@@ -306,7 +336,7 @@ pub async fn rejudge_solution(
 ) -> AppResult<Json<serde_json::Value>> {
     sqlx::query(
         "UPDATE labs_solutions SET test_result = -1, test_score = 0, \
-         compile_error = '' WHERE solution_id = ?"
+         compile_error = '' WHERE solution_id = ?",
     )
     .bind(solution_id)
     .execute(&state.pool)
@@ -331,7 +361,7 @@ pub async fn get_source(
          checksum, lang_id, check_type, posted_time, checked_time, \
          contest_time, test_result, test_score, score, module_val, \
          compile_error, is_passed \
-         FROM labs_solutions WHERE solution_id = ?"
+         FROM labs_solutions WHERE solution_id = ?",
     )
     .bind(solution_id)
     .fetch_optional(&state.pool)
@@ -340,7 +370,8 @@ pub async fn get_source(
     let solution = solution.ok_or(AppError::SolutionNotFound)?;
 
     let is_admin = crate::auth::access::is_admin(user.access);
-    let can_download = crate::auth::access::has_access(user.access, crate::auth::ACCESS_DOWNLOAD_SOLUTIONS);
+    let can_download =
+        crate::auth::access::has_access(user.access, crate::auth::ACCESS_DOWNLOAD_SOLUTIONS);
     if solution.user_id != user.user_id && !is_admin && !can_download {
         return Err(AppError::AccessDenied);
     }
@@ -355,7 +386,9 @@ pub async fn get_source(
         &solution.check_type,
     );
 
-    let data = tokio::fs::read(&path).await.map_err(|_| AppError::NotFound)?;
+    let data = tokio::fs::read(&path)
+        .await
+        .map_err(|_| AppError::NotFound)?;
 
     let filename = crate::services::file_storage::solution_filename(
         solution.solution_id,
@@ -367,7 +400,10 @@ pub async fn get_source(
 
     Ok((
         [
-            (header::CONTENT_TYPE, "text/plain; charset=utf-8".to_string()),
+            (
+                header::CONTENT_TYPE,
+                "text/plain; charset=utf-8".to_string(),
+            ),
             (
                 header::CONTENT_DISPOSITION,
                 format!("attachment; filename=\"{}\"", filename),

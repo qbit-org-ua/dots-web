@@ -67,9 +67,9 @@ impl AppError {
             | AppError::MessageNotFound => StatusCode::NOT_FOUND,
             AppError::AccessDenied => StatusCode::FORBIDDEN,
             AppError::LoginFailed => StatusCode::UNAUTHORIZED,
-            AppError::BadRequest(_)
-            | AppError::InvalidEmail
-            | AppError::InvalidNickname => StatusCode::BAD_REQUEST,
+            AppError::BadRequest(_) | AppError::InvalidEmail | AppError::InvalidNickname => {
+                StatusCode::BAD_REQUEST
+            }
             AppError::EmailExists | AppError::NicknameExists => StatusCode::CONFLICT,
             AppError::Database(_) | AppError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }

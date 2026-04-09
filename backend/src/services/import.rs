@@ -20,7 +20,7 @@ pub async fn import_solution(
 
     // Get solution info
     let solution: Option<(u32, u32, String)> = sqlx::query_as(
-        "SELECT problem_id, user_id, check_type FROM labs_solutions WHERE solution_id = ?"
+        "SELECT problem_id, user_id, check_type FROM labs_solutions WHERE solution_id = ?",
     )
     .bind(solution_id)
     .fetch_optional(pool)
@@ -62,18 +62,17 @@ pub async fn import_solution(
     let group_scores = load_problem_groups(upload_dir, problem_id).await;
 
     // Calculate aggregate results
-    let (test_result, test_score, is_passed) = if parse_result.compile_error_only
-        || parse_result.tests.is_empty()
-    {
-        (0, Decimal::ZERO, 0i8)
-    } else {
-        calculate_aggregates(&parse_result.tests, &group_scores)
-    };
+    let (test_result, test_score, is_passed) =
+        if parse_result.compile_error_only || parse_result.tests.is_empty() {
+            (0, Decimal::ZERO, 0i8)
+        } else {
+            calculate_aggregates(&parse_result.tests, &group_scores)
+        };
 
     // Update solution
     sqlx::query(
         "UPDATE labs_solutions SET test_result = ?, test_score = ?, is_passed = ?, \
-         compile_error = ? WHERE solution_id = ?"
+         compile_error = ? WHERE solution_id = ?",
     )
     .bind(test_result)
     .bind(test_score)
@@ -254,14 +253,22 @@ fn calculate_aggregates(
             }
         }
 
-        let is_passed = if passed_count == total_count { 1i8 } else { 0i8 };
+        let is_passed = if passed_count == total_count {
+            1i8
+        } else {
+            0i8
+        };
         return (passed_count, total_score, is_passed);
     }
 
     // Simple scoring: test_score = sum of individual scores, or percentage
     let total_score: Decimal = tests.iter().map(|t| t.score).sum();
 
-    let is_passed = if passed_count == total_count { 1i8 } else { 0i8 };
+    let is_passed = if passed_count == total_count {
+        1i8
+    } else {
+        0i8
+    };
 
     (passed_count, total_score, is_passed)
 }

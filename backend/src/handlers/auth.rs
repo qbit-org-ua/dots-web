@@ -1,14 +1,14 @@
+use axum::Json;
 use axum::extract::State;
 use axum::http::header::SET_COOKIE;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
 use serde::Deserialize;
 use serde_json::json;
 
+use crate::auth::ACCESS_REGISTERED_USER;
 use crate::auth::middleware::{AppState, OptionalUser, RequireAuth};
 use crate::auth::password::{encrypt_password, generate_random_password};
 use crate::auth::session::{create_session, destroy_session, generate_session_id};
-use crate::auth::{ACCESS_REGISTERED_USER};
 use crate::error::{AppError, AppResult};
 use crate::models::User;
 
@@ -53,7 +53,7 @@ pub async fn login(
     let row: Option<(u32, String, String, u32, i32, i8, String)> = if is_email {
         sqlx::query_as(
             "SELECT user_id, email, nickname, access, messages, is_activated, password \
-             FROM labs_users WHERE email = ? LIMIT 1"
+             FROM labs_users WHERE email = ? LIMIT 1",
         )
         .bind(&req.login)
         .fetch_optional(&state.pool)
@@ -61,7 +61,7 @@ pub async fn login(
     } else {
         sqlx::query_as(
             "SELECT user_id, email, nickname, access, messages, is_activated, password \
-             FROM labs_users WHERE nickname = ? LIMIT 1"
+             FROM labs_users WHERE nickname = ? LIMIT 1",
         )
         .bind(&req.login)
         .fetch_optional(&state.pool)
@@ -77,7 +77,14 @@ pub async fn login(
         return Err(AppError::LoginFailed);
     }
 
-    let user = User { user_id, email, nickname, access, messages, is_activated };
+    let user = User {
+        user_id,
+        email,
+        nickname,
+        access,
+        messages,
+        is_activated,
+    };
 
     // Create session
     let session_id = generate_session_id();
@@ -115,10 +122,9 @@ pub async fn login(
 
     let body = json!({ "user": user });
     let mut response = Json(body).into_response();
-    response.headers_mut().insert(
-        SET_COOKIE,
-        cookie.parse().unwrap(),
-    );
+    response
+        .headers_mut()
+        .insert(SET_COOKIE, cookie.parse().unwrap());
 
     Ok(response)
 }
@@ -134,10 +140,9 @@ pub async fn logout(
 
     let clear_cookie = "DSID=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0";
     let mut response = Json(json!({"ok": true})).into_response();
-    response.headers_mut().insert(
-        SET_COOKIE,
-        clear_cookie.parse().unwrap(),
-    );
+    response
+        .headers_mut()
+        .insert(SET_COOKIE, clear_cookie.parse().unwrap());
 
     Ok(response)
 }
@@ -155,29 +160,30 @@ pub async fn register(
     if req.nickname.len() < 3 || req.nickname.len() > 20 {
         return Err(AppError::InvalidNickname);
     }
-    if !req.nickname.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+    if !req
+        .nickname
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+    {
         return Err(AppError::InvalidNickname);
     }
 
     // Check email uniqueness
-    let exists: Option<(u32,)> = sqlx::query_as(
-        "SELECT user_id FROM labs_users WHERE email = ?"
-    )
-    .bind(&req.email)
-    .fetch_optional(&state.pool)
-    .await?;
+    let exists: Option<(u32,)> = sqlx::query_as("SELECT user_id FROM labs_users WHERE email = ?")
+        .bind(&req.email)
+        .fetch_optional(&state.pool)
+        .await?;
 
     if exists.is_some() {
         return Err(AppError::EmailExists);
     }
 
     // Check nickname uniqueness
-    let exists: Option<(u32,)> = sqlx::query_as(
-        "SELECT user_id FROM labs_users WHERE nickname = ?"
-    )
-    .bind(&req.nickname)
-    .fetch_optional(&state.pool)
-    .await?;
+    let exists: Option<(u32,)> =
+        sqlx::query_as("SELECT user_id FROM labs_users WHERE nickname = ?")
+            .bind(&req.nickname)
+            .fetch_optional(&state.pool)
+            .await?;
 
     if exists.is_some() {
         return Err(AppError::NicknameExists);
@@ -218,18 +224,16 @@ pub async fn me(
             // Check if in sudo mode by reading su_from from session
             let su_mode = if let Some(cookie) = jar.get("DSID") {
                 let sess: Option<(String,)> = sqlx::query_as(
-                    "SELECT CAST(session_data AS CHAR) FROM labs_sessions WHERE session_id = ?"
+                    "SELECT CAST(session_data AS CHAR) FROM labs_sessions WHERE session_id = ?",
                 )
                 .bind(cookie.value())
                 .fetch_optional(&state.pool)
                 .await
                 .ok()
                 .flatten();
-                sess.and_then(|(data,)| {
-                    serde_json::from_str::<serde_json::Value>(&data).ok()
-                })
-                .and_then(|v| v.get("su_from").and_then(|s| s.as_str().map(|_| true)))
-                .unwrap_or(false)
+                sess.and_then(|(data,)| serde_json::from_str::<serde_json::Value>(&data).ok())
+                    .and_then(|v| v.get("su_from").and_then(|s| s.as_str().map(|_| true)))
+                    .unwrap_or(false)
             } else {
                 false
             };
@@ -244,12 +248,11 @@ pub async fn restore_start(
     Json(req): Json<RestoreStartRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
     // Check user exists
-    let user: Option<(u32, String)> = sqlx::query_as(
-        "SELECT user_id, nickname FROM labs_users WHERE email = ?"
-    )
-    .bind(&req.email)
-    .fetch_optional(&state.pool)
-    .await?;
+    let user: Option<(u32, String)> =
+        sqlx::query_as("SELECT user_id, nickname FROM labs_users WHERE email = ?")
+            .bind(&req.email)
+            .fetch_optional(&state.pool)
+            .await?;
 
     if user.is_none() {
         return Err(AppError::UserNotFound);
@@ -264,7 +267,7 @@ pub async fn restore_start(
     let cache_created = chrono::Utc::now().timestamp() as i32;
     sqlx::query(
         "INSERT INTO labs_cache (cache_key, created, expire, data) VALUES (?, ?, ?, ?) \
-         ON DUPLICATE KEY UPDATE data = VALUES(data), expire = VALUES(expire)"
+         ON DUPLICATE KEY UPDATE data = VALUES(data), expire = VALUES(expire)",
     )
     .bind(&cache_key)
     .bind(cache_created)
@@ -288,21 +291,20 @@ pub async fn restore_verify(
     let cache_key = format!("restore:{}", req.email);
     let now = chrono::Utc::now().timestamp();
 
-    let cached: Option<(Vec<u8>,)> = sqlx::query_as(
-        "SELECT data FROM labs_cache WHERE cache_key = ? AND expire > ?"
-    )
-    .bind(&cache_key)
-    .bind(now)
-    .fetch_optional(&state.pool)
-    .await?;
+    let cached: Option<(Vec<u8>,)> =
+        sqlx::query_as("SELECT data FROM labs_cache WHERE cache_key = ? AND expire > ?")
+            .bind(&cache_key)
+            .bind(now)
+            .fetch_optional(&state.pool)
+            .await?;
 
     match cached {
         Some((code_bytes,)) if String::from_utf8_lossy(&code_bytes) == req.code => {
             Ok(Json(json!({ "ok": true, "valid": true })))
         }
-        _ => {
-            Ok(Json(json!({ "ok": false, "valid": false, "message": "Invalid or expired code" })))
-        }
+        _ => Ok(Json(
+            json!({ "ok": false, "valid": false, "message": "Invalid or expired code" }),
+        )),
     }
 }
 
@@ -313,13 +315,12 @@ pub async fn restore_reset(
     let cache_key = format!("restore:{}", req.email);
     let now = chrono::Utc::now().timestamp();
 
-    let cached: Option<(Vec<u8>,)> = sqlx::query_as(
-        "SELECT data FROM labs_cache WHERE cache_key = ? AND expire > ?"
-    )
-    .bind(&cache_key)
-    .bind(now)
-    .fetch_optional(&state.pool)
-    .await?;
+    let cached: Option<(Vec<u8>,)> =
+        sqlx::query_as("SELECT data FROM labs_cache WHERE cache_key = ? AND expire > ?")
+            .bind(&cache_key)
+            .bind(now)
+            .fetch_optional(&state.pool)
+            .await?;
 
     match cached {
         Some((code_bytes,)) if String::from_utf8_lossy(&code_bytes) == req.code => {
@@ -336,7 +337,9 @@ pub async fn restore_reset(
                 .execute(&state.pool)
                 .await?;
 
-            Ok(Json(json!({ "ok": true, "message": "Password updated successfully" })))
+            Ok(Json(
+                json!({ "ok": true, "message": "Password updated successfully" }),
+            ))
         }
         _ => Err(AppError::BadRequest("Invalid or expired code".to_string())),
     }

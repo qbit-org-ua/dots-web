@@ -133,7 +133,9 @@ fn parse_session_uid(data: &str) -> Option<u32> {
     }
 
     // Try PHP session format: key|TYPE:VALUE;key|TYPE:VALUE;
-    parse_php_session_data(data).get("uid").and_then(|v| v.parse().ok())
+    parse_php_session_data(data)
+        .get("uid")
+        .and_then(|v| v.parse().ok())
 }
 
 /// Parse contest_id from session_data
@@ -145,7 +147,9 @@ pub fn _parse_session_contest_id(data: &str) -> Option<i32> {
         return Some(cid as i32);
     }
 
-    parse_php_session_data(data).get("cid").and_then(|v| v.parse().ok())
+    parse_php_session_data(data)
+        .get("cid")
+        .and_then(|v| v.parse().ok())
 }
 
 /// Parse PHP session format: uid|i:1234;lt|i:1700000000;cid|i:5;

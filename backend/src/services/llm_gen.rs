@@ -84,11 +84,8 @@ async fn process_claimed(pool: &MySqlPool, config: &Config, solution: SolutionRo
     let sid = solution.solution_id;
     tracing::info!("llm_gen: processing solution {sid}");
 
-    let result = tokio::time::timeout(
-        LLM_TIMEOUT,
-        generate_and_replace(pool, config, &solution),
-    )
-    .await;
+    let result =
+        tokio::time::timeout(LLM_TIMEOUT, generate_and_replace(pool, config, &solution)).await;
 
     match result {
         Ok(Ok(())) => {
@@ -185,9 +182,7 @@ async fn generate_and_replace(
 
     // Escape original source as a C++ block comment and prepend
     let escaped_prompt = original_source.replace("*/", "* /");
-    let final_source = format!(
-        "/*\nOriginal prompt:\n{escaped_prompt}\n*/\n{cpp_code}"
-    );
+    let final_source = format!("/*\nOriginal prompt:\n{escaped_prompt}\n*/\n{cpp_code}");
 
     // Overwrite the source file on disk
     if let Some(parent) = source_path.parent() {
@@ -196,7 +191,7 @@ async fn generate_and_replace(
     tokio::fs::write(&source_path, &final_source).await?;
 
     // Update checksum and set test_result = -1 so the judge picks it up
-    use md5::{Md5, Digest};
+    use md5::{Digest, Md5};
     let mut hasher = Md5::new();
     hasher.update(final_source.as_bytes());
     let checksum = hex::encode(hasher.finalize());

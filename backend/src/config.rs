@@ -31,8 +31,7 @@ impl Config {
             upload_dir: env::var("UPLOAD_DIR").unwrap_or_else(|_| "/mnt/dots-web-php".to_string()),
             frontend_url: env::var("FRONTEND_URL")
                 .unwrap_or_else(|_| "http://localhost:3000".to_string()),
-            listen_addr: env::var("LISTEN_ADDR")
-                .unwrap_or_else(|_| "0.0.0.0:3001".to_string()),
+            listen_addr: env::var("LISTEN_ADDR").unwrap_or_else(|_| "0.0.0.0:3001".to_string()),
             bot_friends,
             nearai_api_key: env::var("NEARAI_API_KEY")
                 .expect("NEARAI_API_KEY env variable is required for NEAR AI contests"),

@@ -1,6 +1,6 @@
 use axum::body::Bytes;
 use axum::extract::{Query, State};
-use axum::http::{header, HeaderMap, StatusCode};
+use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use base64::Engine;
 use serde::Deserialize;
@@ -65,7 +65,12 @@ fn unauthorized() -> Response {
 }
 
 fn text_response(body: &str) -> Response {
-    (StatusCode::OK, [(header::CONTENT_TYPE, "text/plain")], body.to_string()).into_response()
+    (
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, "text/plain")],
+        body.to_string(),
+    )
+        .into_response()
 }
 
 fn binary_response(data: Vec<u8>, filename: &str) -> Response {
@@ -119,7 +124,7 @@ async fn handle_solution(state: &AppState, params: &BotParams, action: &str) -> 
     let solution: Option<(u32, u32, u32, u32, String)> = sqlx::query_as(
         "SELECT solution_id, problem_id, user_id, lang_id, check_type \
          FROM labs_solutions WHERE test_result = -1 \
-         ORDER BY solution_id ASC LIMIT 1"
+         ORDER BY solution_id ASC LIMIT 1",
     )
     .fetch_optional(&state.pool)
     .await
@@ -141,7 +146,10 @@ async fn handle_solution(state: &AppState, params: &BotParams, action: &str) -> 
                 download_solution(state, sid).await
             } else {
                 // Return solution info
-                text_response(&format!("{}|{}|{}|{}|{}", sid, pid, uid, lang_id, check_type))
+                text_response(&format!(
+                    "{}|{}|{}|{}|{}",
+                    sid, pid, uid, lang_id, check_type
+                ))
             }
         }
         None => text_response("EMPTY"),
@@ -151,7 +159,7 @@ async fn handle_solution(state: &AppState, params: &BotParams, action: &str) -> 
 async fn download_solution(state: &AppState, solution_id: u32) -> Response {
     let solution: Option<(u32, u32, u32, u32, String)> = sqlx::query_as(
         "SELECT solution_id, problem_id, user_id, lang_id, check_type \
-         FROM labs_solutions WHERE solution_id = ?"
+         FROM labs_solutions WHERE solution_id = ?",
     )
     .bind(solution_id)
     .fetch_optional(&state.pool)
@@ -162,12 +170,18 @@ async fn download_solution(state: &AppState, solution_id: u32) -> Response {
     match solution {
         Some((sid, pid, uid, lang_id, check_type)) => {
             let path = file_storage::solution_fullname(
-                &state.config.upload_dir, sid, pid, uid, lang_id as i32, &check_type,
+                &state.config.upload_dir,
+                sid,
+                pid,
+                uid,
+                lang_id as i32,
+                &check_type,
             );
 
             match tokio::fs::read(&path).await {
                 Ok(data) => {
-                    let filename = file_storage::solution_filename(sid, pid, uid, lang_id as i32, &check_type);
+                    let filename =
+                        file_storage::solution_filename(sid, pid, uid, lang_id as i32, &check_type);
                     binary_response(data, &filename)
                 }
                 Err(_) => text_response("ERR: file not found"),
@@ -186,7 +200,7 @@ async fn handle_checkout(state: &AppState, params: &BotParams, action: &str) -> 
 
     let solution: Option<(u32, u32, u32, u32, String)> = sqlx::query_as(
         "SELECT solution_id, problem_id, user_id, lang_id, check_type \
-         FROM labs_solutions WHERE solution_id = ?"
+         FROM labs_solutions WHERE solution_id = ?",
     )
     .bind(sid)
     .fetch_optional(&state.pool)
@@ -197,7 +211,12 @@ async fn handle_checkout(state: &AppState, params: &BotParams, action: &str) -> 
     match solution {
         Some((sid, pid, uid, lang_id, check_type)) => {
             let path = file_storage::solution_fullname(
-                &state.config.upload_dir, sid, pid, uid, lang_id as i32, &check_type,
+                &state.config.upload_dir,
+                sid,
+                pid,
+                uid,
+                lang_id as i32,
+                &check_type,
             );
 
             if !tokio::fs::try_exists(&path).await.unwrap_or(false) {
@@ -212,23 +231,20 @@ async fn handle_checkout(state: &AppState, params: &BotParams, action: &str) -> 
             }
 
             // Set test_result = -3 (checked out)
-            let _ = sqlx::query(
-                "UPDATE labs_solutions SET test_result = -3 WHERE solution_id = ?"
-            )
-            .bind(sid)
-            .execute(&state.pool)
-            .await;
+            let _ = sqlx::query("UPDATE labs_solutions SET test_result = -3 WHERE solution_id = ?")
+                .bind(sid)
+                .execute(&state.pool)
+                .await;
 
             if action == "l" {
                 // Return problem complexity (labs_problems doesn't have time_limit/memory_limit/test_count)
-                let limits: Option<(i32,)> = sqlx::query_as(
-                    "SELECT complexity FROM labs_problems WHERE problem_id = ?"
-                )
-                .bind(pid)
-                .fetch_optional(&state.pool)
-                .await
-                .ok()
-                .flatten();
+                let limits: Option<(i32,)> =
+                    sqlx::query_as("SELECT complexity FROM labs_problems WHERE problem_id = ?")
+                        .bind(pid)
+                        .fetch_optional(&state.pool)
+                        .await
+                        .ok()
+                        .flatten();
 
                 match limits {
                     Some((complexity,)) => text_response(&format!("OK|{}", complexity)),
@@ -311,7 +327,7 @@ async fn handle_gc(state: &AppState) -> Response {
 
     let result = sqlx::query(
         "UPDATE labs_solutions SET test_result = -1 \
-         WHERE test_result IN (-2, -3) AND posted_time < ?"
+         WHERE test_result IN (-2, -3) AND posted_time < ?",
     )
     .bind(cutoff)
     .execute(&state.pool)
@@ -340,6 +356,5 @@ async fn handle_import(state: &AppState, params: &BotParams) -> Response {
 
 pub fn router() -> axum::Router<AppState> {
     use axum::routing::get;
-    axum::Router::new()
-        .route("/", get(bot_handler).post(bot_handler))
+    axum::Router::new().route("/", get(bot_handler).post(bot_handler))
 }

@@ -1,5 +1,5 @@
-use axum::extract::{Path, Query, State};
 use axum::Json;
+use axum::extract::{Path, Query, State};
 use serde::Deserialize;
 use serde_json::json;
 
@@ -48,7 +48,8 @@ pub async fn get_standings(
         show_frozen: query.show_frozen.unwrap_or(false) && is_admin,
     };
 
-    let result = crate::services::standings::compute_standings(&state.pool, &contest, &params).await?;
+    let result =
+        crate::services::standings::compute_standings(&state.pool, &contest, &params).await?;
 
     Ok(Json(json!({
         "contest": {

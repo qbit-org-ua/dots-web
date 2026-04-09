@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use super::*;
 use crate::error::AppResult;
 use crate::models::{Contest, ContestData};
-use crate::services::contest_engine::{compute_status, ContestStatus};
+use crate::services::contest_engine::{ContestStatus, compute_status};
 
 #[derive(sqlx::FromRow, Debug)]
 struct AcmSolutionRow {
@@ -45,8 +45,7 @@ pub async fn compute_acm_standings(
         && matches!(
             status,
             ContestStatus::GoingFrozen | ContestStatus::FinishedFrozen
-        )
-    {
+        ) {
         Some(duration - frozen_time)
     } else {
         None
@@ -58,7 +57,7 @@ pub async fn compute_acm_standings(
          FROM labs_contest_problems cp \
          LEFT JOIN labs_problems p ON cp.problem_id = p.problem_id \
          WHERE cp.contest_id = ? \
-         ORDER BY cp.short_name ASC"
+         ORDER BY cp.short_name ASC",
     )
     .bind(contest.contest_id)
     .fetch_all(pool)
@@ -66,12 +65,11 @@ pub async fn compute_acm_standings(
 
     // Get group filter
     let group_users: Option<Vec<u32>> = if let Some(gid) = params.group_id {
-        let users: Vec<(i32,)> = sqlx::query_as(
-            "SELECT user_id FROM labs_user_group_relationships WHERE group_id = ?"
-        )
-        .bind(gid)
-        .fetch_all(pool)
-        .await?;
+        let users: Vec<(i32,)> =
+            sqlx::query_as("SELECT user_id FROM labs_user_group_relationships WHERE group_id = ?")
+                .bind(gid)
+                .fetch_all(pool)
+                .await?;
         Some(users.into_iter().map(|(uid,)| uid as u32).collect())
     } else {
         None
@@ -129,14 +127,17 @@ pub async fn compute_acm_standings(
             continue;
         }
 
-        if sol.test_result == 0 { // test_result == 0 means OK (accepted)
+        if sol.test_result == 0 {
+            // test_result == 0 means OK (accepted)
             entry.solved = true;
             entry.time = ct / 60; // convert to minutes
             entry.attempts += 1;
             entry.solution_id = Some(sol.solution_id);
 
             // Track first solve
-            let first = first_solve.entry(sol.problem_id as i32).or_insert((sol.user_id, ct));
+            let first = first_solve
+                .entry(sol.problem_id as i32)
+                .or_insert((sol.user_id, ct));
             if ct < first.1 {
                 *first = (sol.user_id, ct);
             }
@@ -169,12 +170,11 @@ pub async fn compute_acm_standings(
     }
 
     // Include registered users with no solutions
-    let registered: Vec<(i32,)> = sqlx::query_as(
-        "SELECT user_id FROM labs_contest_users WHERE contest_id = ?"
-    )
-    .bind(contest.contest_id)
-    .fetch_all(pool)
-    .await?;
+    let registered: Vec<(i32,)> =
+        sqlx::query_as("SELECT user_id FROM labs_contest_users WHERE contest_id = ?")
+            .bind(contest.contest_id)
+            .fetch_all(pool)
+            .await?;
 
     for (uid,) in &registered {
         let uid_u32 = *uid as u32;
@@ -185,12 +185,11 @@ pub async fn compute_acm_standings(
         }
         user_results.entry(uid_u32).or_default();
         if let std::collections::hash_map::Entry::Vacant(e) = user_info.entry(uid_u32) {
-            let info: Option<(String, String)> = sqlx::query_as(
-                "SELECT nickname, FIO FROM labs_users WHERE user_id = ?"
-            )
-            .bind(uid)
-            .fetch_optional(pool)
-            .await?;
+            let info: Option<(String, String)> =
+                sqlx::query_as("SELECT nickname, FIO FROM labs_users WHERE user_id = ?")
+                    .bind(uid)
+                    .fetch_optional(pool)
+                    .await?;
             if let Some((nick, fio)) = info {
                 e.insert((nick, fio));
             }
