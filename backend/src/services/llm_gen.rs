@@ -1,72 +1,128 @@
 use std::sync::Arc;
 
+use futures::stream::{self, StreamExt};
 use sqlx::MySqlPool;
 
 use crate::config::Config;
 use crate::services::file_storage;
 
+/// Maximum number of solutions processed in parallel by the LLM job.
+const MAX_CONCURRENCY: usize = 10;
+
+/// Per-solution timeout for the LLM call + file replacement step.
+const LLM_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
+
 /// Spawn the background LLM generation loop.
-/// Runs every second, picks up solutions with test_result = -4,
-/// sends source to LLM, replaces source file with generated C++, sets test_result = -1.
+/// Polls for solutions with test_result = -4 and processes up to
+/// MAX_CONCURRENCY in parallel via a `buffered` stream of futures.
+/// Sends source to LLM, replaces source file with generated C++, sets
+/// test_result = -1. On timeout, resets to -4 so another worker can retry.
 pub fn spawn(pool: MySqlPool, config: Arc<Config>) {
     tokio::spawn(async move {
-        let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
-        loop {
-            interval.tick().await;
-            if let Err(e) = process_one(&pool, &config).await {
-                tracing::error!("llm_gen job error: {e:#}");
-            }
-        }
+        // A stream that yields one processing future per claimed solution.
+        // The unfold itself is sequential (claim DB row → produce future);
+        // the produced futures are then run concurrently by `.buffered(N)`.
+        let work_stream = stream::unfold(
+            (pool.clone(), config.clone()),
+            |(pool, config)| async move {
+                loop {
+                    match claim_one(&pool).await {
+                        Ok(Some(solution)) => {
+                            let pool_fut = pool.clone();
+                            let config_fut = config.clone();
+                            let fut = async move {
+                                process_claimed(&pool_fut, &config_fut, solution).await;
+                            };
+                            return Some((fut, (pool, config)));
+                        }
+                        Ok(None) => {}
+                        Err(e) => tracing::error!("llm_gen claim error: {e:#}"),
+                    }
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                }
+            },
+        );
+
+        work_stream
+            .buffered(MAX_CONCURRENCY)
+            .for_each(|()| async {})
+            .await;
     });
 }
 
-async fn process_one(pool: &MySqlPool, config: &Config) -> anyhow::Result<()> {
-    // Atomically claim a solution: set test_result = -5 where it was -4 (LIMIT 1)
+/// Atomically claim one pending solution by flipping it from -4 to -5.
+/// Uses MySQL's LAST_INSERT_ID(expr) trick so the claimed id is returned
+/// on the same connection that performed the UPDATE — safe under concurrent
+/// callers because each UPDATE+LIMIT 1 affects a distinct row.
+async fn claim_one(pool: &MySqlPool) -> anyhow::Result<Option<SolutionRow>> {
     let result = sqlx::query(
-        "UPDATE labs_solutions SET test_result = -5 WHERE test_result = -4 LIMIT 1",
+        "UPDATE labs_solutions \
+         SET test_result = -5, solution_id = LAST_INSERT_ID(solution_id) \
+         WHERE test_result = -4 LIMIT 1",
     )
     .execute(pool)
     .await?;
 
     if result.rows_affected() == 0 {
-        return Ok(());
+        return Ok(None);
     }
 
-    // Fetch the claimed solution
-    let solution = sqlx::query_as::<_, SolutionRow>(
+    let sid = result.last_insert_id() as u32;
+
+    let row = sqlx::query_as::<_, SolutionRow>(
         "SELECT solution_id, problem_id, user_id, lang_id, check_type \
-         FROM labs_solutions WHERE test_result = -5 LIMIT 1",
+         FROM labs_solutions WHERE solution_id = ?",
     )
+    .bind(sid)
     .fetch_optional(pool)
     .await?;
 
-    let solution = match solution {
-        Some(s) => s,
-        None => return Ok(()),
-    };
+    Ok(row)
+}
 
+async fn process_claimed(pool: &MySqlPool, config: &Config, solution: SolutionRow) {
     let sid = solution.solution_id;
     tracing::info!("llm_gen: processing solution {sid}");
 
-    match generate_and_replace(pool, config, &solution).await {
-        Ok(()) => {
-            tracing::info!("llm_gen: solution {sid} done, setting test_result = -1");
+    let result = tokio::time::timeout(
+        LLM_TIMEOUT,
+        generate_and_replace(pool, config, &solution),
+    )
+    .await;
+
+    match result {
+        Ok(Ok(())) => {
+            tracing::info!("llm_gen: solution {sid} done, set to -1");
         }
-        Err(e) => {
+        Err(_elapsed) => {
+            tracing::warn!(
+                "llm_gen: solution {sid} timed out after {}s, resetting to -4",
+                LLM_TIMEOUT.as_secs()
+            );
+            if let Err(e) =
+                sqlx::query("UPDATE labs_solutions SET test_result = -4 WHERE solution_id = ?")
+                    .bind(sid)
+                    .execute(pool)
+                    .await
+            {
+                tracing::error!("llm_gen: failed to reset solution {sid} to -4: {e:#}");
+            }
+        }
+        Ok(Err(e)) => {
             tracing::error!("llm_gen: solution {sid} failed: {e:#}");
-            // Put it back as pending for normal judging with an error note
-            sqlx::query(
+            if let Err(e2) = sqlx::query(
                 "UPDATE labs_solutions SET test_result = -1, \
                  compile_error = ? WHERE solution_id = ?",
             )
             .bind(format!("LLM generation failed: {e}"))
             .bind(sid)
             .execute(pool)
-            .await?;
+            .await
+            {
+                tracing::error!("llm_gen: failed to mark solution {sid} as failed: {e2:#}");
+            }
         }
     }
-
-    Ok(())
 }
 
 async fn generate_and_replace(
