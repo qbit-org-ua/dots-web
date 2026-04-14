@@ -199,20 +199,41 @@ async fn generate_and_replace(
         ]
     });
 
-    let response = client
-        .post("https://cloud-api.near.ai/v1/chat/completions")
-        .bearer_auth(api_key)
-        .json(&body)
-        .send()
-        .await?;
+    let resp: serde_json::Value = loop {
+        let send_result = client
+            .post("https://cloud-api.near.ai/v1/chat/completions")
+            .bearer_auth(api_key)
+            .json(&body)
+            .send()
+            .await;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        anyhow::bail!("LLM API returned {status}: {text}");
-    }
+        match send_result {
+            Ok(response) if response.status().is_success() => {
+                match response.json().await {
+                    Ok(v) => break v,
+                    Err(e) => {
+                        tracing::warn!(
+                            "llm_gen: solution {sid} failed to parse response: {e:#}, retrying in 10s"
+                        );
+                    }
+                }
+            }
+            Ok(response) => {
+                let status = response.status();
+                let text = response.text().await.unwrap_or_default();
+                tracing::warn!(
+                    "llm_gen: solution {sid} API returned {status}: {text}, retrying in 10s"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(
+                    "llm_gen: solution {sid} request failed: {e:#}, retrying in 10s"
+                );
+            }
+        }
 
-    let resp: serde_json::Value = response.json().await?;
+        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+    };
 
     // Extract the assistant message content
     let content = resp["choices"][0]["message"]["content"]
