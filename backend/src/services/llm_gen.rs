@@ -27,11 +27,11 @@ pub fn spawn(pool: MySqlPool, config: Arc<Config>) {
             |(pool, config)| async move {
                 loop {
                     match claim_one(&pool).await {
-                        Ok(Some(solution)) => {
+                        Ok(Some(claimed)) => {
                             let pool_fut = pool.clone();
                             let config_fut = config.clone();
                             let fut = async move {
-                                process_claimed(&pool_fut, &config_fut, solution).await;
+                                process_claimed(&pool_fut, &config_fut, claimed).await;
                             };
                             return Some((fut, (pool, config)));
                         }
@@ -50,59 +50,95 @@ pub fn spawn(pool: MySqlPool, config: Arc<Config>) {
     });
 }
 
-/// Atomically claim one pending solution by flipping it from -4 to -5.
-/// Uses MySQL's LAST_INSERT_ID(expr) trick so the claimed id is returned
-/// on the same connection that performed the UPDATE — safe under concurrent
-/// callers because each UPDATE+LIMIT 1 affects a distinct row.
-async fn claim_one(pool: &MySqlPool) -> anyhow::Result<Option<SolutionRow>> {
-    let result = sqlx::query(
-        "UPDATE labs_solutions \
-         SET test_result = -5, solution_id = LAST_INSERT_ID(solution_id) \
-         WHERE test_result = -4 LIMIT 1",
-    )
-    .execute(pool)
-    .await?;
+/// TL bitmask flag used by the frontend verdict display.
+const TEST_RESULT_TL: i32 = 0x0010;
 
-    if result.rows_affected() == 0 {
-        return Ok(None);
+/// Atomically claim one pending solution by flipping it from -4 (first
+/// attempt) or -6 (retry) to -5.  Uses MySQL's LAST_INSERT_ID(expr) trick
+/// so the claimed id is returned on the same connection — safe under
+/// concurrent callers because each UPDATE+LIMIT 1 affects a distinct row.
+async fn claim_one(pool: &MySqlPool) -> anyhow::Result<Option<ClaimedSolution>> {
+    // Try first-attempt solutions (-4) first, then retries (-6).
+    for (status, is_retry) in [(-4, false), (-6, true)] {
+        let result = sqlx::query(
+            "UPDATE labs_solutions \
+             SET test_result = -5, solution_id = LAST_INSERT_ID(solution_id) \
+             WHERE test_result = ? LIMIT 1",
+        )
+        .bind(status)
+        .execute(pool)
+        .await?;
+
+        if result.rows_affected() == 0 {
+            continue;
+        }
+
+        let sid = result.last_insert_id() as u32;
+
+        let row = sqlx::query_as::<_, SolutionRow>(
+            "SELECT solution_id, problem_id, user_id, lang_id, check_type \
+             FROM labs_solutions WHERE solution_id = ?",
+        )
+        .bind(sid)
+        .fetch_optional(pool)
+        .await?;
+
+        return Ok(row.map(|r| ClaimedSolution {
+            row: r,
+            is_retry,
+        }));
     }
 
-    let sid = result.last_insert_id() as u32;
-
-    let row = sqlx::query_as::<_, SolutionRow>(
-        "SELECT solution_id, problem_id, user_id, lang_id, check_type \
-         FROM labs_solutions WHERE solution_id = ?",
-    )
-    .bind(sid)
-    .fetch_optional(pool)
-    .await?;
-
-    Ok(row)
+    Ok(None)
 }
 
-async fn process_claimed(pool: &MySqlPool, config: &Config, solution: SolutionRow) {
-    let sid = solution.solution_id;
-    tracing::info!("llm_gen: processing solution {sid}");
+async fn process_claimed(pool: &MySqlPool, config: &Config, claimed: ClaimedSolution) {
+    let sid = claimed.row.solution_id;
+    let is_retry = claimed.is_retry;
+    tracing::info!(
+        "llm_gen: processing solution {sid} ({})",
+        if is_retry { "retry" } else { "first attempt" }
+    );
 
     let result =
-        tokio::time::timeout(LLM_TIMEOUT, generate_and_replace(pool, config, &solution)).await;
+        tokio::time::timeout(LLM_TIMEOUT, generate_and_replace(pool, config, &claimed.row)).await;
 
     match result {
         Ok(Ok(())) => {
             tracing::info!("llm_gen: solution {sid} done, set to -1");
         }
         Err(_elapsed) => {
-            tracing::warn!(
-                "llm_gen: solution {sid} timed out after {}s, resetting to -4",
-                LLM_TIMEOUT.as_secs()
-            );
-            if let Err(e) =
-                sqlx::query("UPDATE labs_solutions SET test_result = -4 WHERE solution_id = ?")
-                    .bind(sid)
-                    .execute(pool)
-                    .await
-            {
-                tracing::error!("llm_gen: failed to reset solution {sid} to -4: {e:#}");
+            if is_retry {
+                // Second timeout — give up with TL verdict.
+                tracing::warn!(
+                    "llm_gen: solution {sid} timed out twice, marking as TL"
+                );
+                if let Err(e) = sqlx::query(
+                    "UPDATE labs_solutions SET test_result = ?, \
+                     compile_error = 'LLM inference timed out' WHERE solution_id = ?",
+                )
+                .bind(TEST_RESULT_TL)
+                .bind(sid)
+                .execute(pool)
+                .await
+                {
+                    tracing::error!("llm_gen: failed to set TL for solution {sid}: {e:#}");
+                }
+            } else {
+                // First timeout — queue for one more attempt (-6).
+                tracing::warn!(
+                    "llm_gen: solution {sid} timed out after {}s, queuing retry (-6)",
+                    LLM_TIMEOUT.as_secs()
+                );
+                if let Err(e) = sqlx::query(
+                    "UPDATE labs_solutions SET test_result = -6 WHERE solution_id = ?",
+                )
+                .bind(sid)
+                .execute(pool)
+                .await
+                {
+                    tracing::error!("llm_gen: failed to set solution {sid} to -6: {e:#}");
+                }
             }
         }
         Ok(Err(e)) => {
@@ -235,6 +271,11 @@ fn extract_cpp_code(content: &str) -> anyhow::Result<String> {
     }
     // Last resort: use the entire content as code
     Ok(content.trim().to_string())
+}
+
+struct ClaimedSolution {
+    row: SolutionRow,
+    is_retry: bool,
 }
 
 #[derive(sqlx::FromRow)]
