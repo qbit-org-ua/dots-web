@@ -222,9 +222,17 @@ async fn generate_and_replace(
     // Extract C++ code from markdown block
     let cpp_code = extract_cpp_code(content)?;
 
+    // Extract total_tokens from usage
+    let total_tokens = resp["usage"]["total_tokens"]
+        .as_u64()
+        .map(|t| t.to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+
     // Escape original source as a C++ block comment and prepend
     let escaped_prompt = original_source.replace("*/", "* /");
-    let final_source = format!("/*\nOriginal prompt:\n{escaped_prompt}\n*/\n{cpp_code}");
+    let final_source = format!(
+        "/*\nOriginal prompt:\n{escaped_prompt}\n\ntotal_tokens: {total_tokens}\n*/\n{cpp_code}"
+    );
 
     // Overwrite the source file on disk
     if let Some(parent) = source_path.parent() {
