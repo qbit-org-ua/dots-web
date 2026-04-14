@@ -176,11 +176,17 @@ async fn generate_and_replace(
         .await
         .map_err(|e| anyhow::anyhow!("Failed to read source at {}: {e}", source_path.display()))?;
 
-    // Call LLM API
+    // Call LLM API — model depends on lang_id
+    let model = match solution.lang_id {
+        40 => "zai-org/GLM-5-FP8",
+        41 => "Qwen/Qwen3.5-122B-A10B",
+        other => anyhow::bail!("Unsupported lang_id {other} for LLM generation"),
+    };
+
     let api_key = &config.nearai_api_key;
     let client = reqwest::Client::new();
     let body = serde_json::json!({
-        "model": "zai-org/GLM-5-FP8",
+        "model": model,
         "messages": [
             {
                 "role": "system",
