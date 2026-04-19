@@ -12,9 +12,9 @@ type UserScoreMap = HashMap<u32, HashMap<i32, (Decimal, bool, Option<u32>)>>;
 struct SolutionRow {
     user_id: u32,
     problem_id: u32,
-    best_test_score: Decimal,
-    best_score: Decimal,
-    has_ok: i64, // 1 if any solution has test_result = 0 (OK)
+    latest_score: Decimal,
+    latest_solution_id: u32,
+    latest_test_result: i32,
 }
 
 /// Compute classic standings (also used for otbor, olympic, cert contest types)
@@ -47,42 +47,29 @@ pub async fn compute_classic_standings(
         None
     };
 
-    // Get best scores per user per problem
+    // Get the latest tested non-CE solution's score per user per problem.
+    // Matches PHP: MAX(solution_id) WHERE test_result > -1 AND test_result < 0x10000
+    //              AND test_result != 0x0002 (CE)
+    // This skips: untested (-1), compilation errors (CE=2), and internal errors (>=0x10000)
     let solutions: Vec<SolutionRow> = sqlx::query_as(
         "SELECT s.user_id, s.problem_id, \
-         MAX(s.test_score) as best_test_score, \
-         MAX(s.score) as best_score, \
-         MAX(CASE WHEN s.test_result = 0 THEN 1 ELSE 0 END) as has_ok \
+         s.score as latest_score, \
+         s.solution_id as latest_solution_id, \
+         s.test_result as latest_test_result \
          FROM labs_solutions s \
-         WHERE s.contest_id = ? AND s.test_result >= 0 \
-         GROUP BY s.user_id, s.problem_id",
+         INNER JOIN ( \
+           SELECT user_id, problem_id, MAX(solution_id) as latest_id \
+           FROM labs_solutions \
+           WHERE contest_id = ? \
+             AND test_result > -1 AND test_result < 65536 AND test_result <> 2 \
+           GROUP BY user_id, problem_id \
+         ) latest ON s.solution_id = latest.latest_id \
+         WHERE s.contest_id = ?",
     )
+    .bind(contest.contest_id)
     .bind(contest.contest_id)
     .fetch_all(pool)
     .await?;
-
-    // Get the best solution_id per user per problem (the one with highest test_score)
-    let best_solution_ids: HashMap<(u32, u32), u32> = {
-        let rows: Vec<(u32, u32, u32)> = sqlx::query_as(
-            "SELECT s.user_id, s.problem_id, s.solution_id \
-             FROM labs_solutions s \
-             INNER JOIN ( \
-               SELECT user_id, problem_id, MAX(test_score) as max_score \
-               FROM labs_solutions \
-               WHERE contest_id = ? AND test_result >= 0 \
-               GROUP BY user_id, problem_id \
-             ) best ON s.user_id = best.user_id AND s.problem_id = best.problem_id AND s.test_score = best.max_score \
-             WHERE s.contest_id = ? AND s.test_result >= 0 \
-             GROUP BY s.user_id, s.problem_id"
-        )
-        .bind(contest.contest_id)
-        .bind(contest.contest_id)
-        .fetch_all(pool)
-        .await?;
-        rows.into_iter()
-            .map(|(uid, pid, sid)| ((uid, pid), sid))
-            .collect()
-    };
 
     // Get problem max_scores from contest_problems for deciding which score to use
     let problem_max_scores: HashMap<i32, i32> = {
@@ -108,26 +95,13 @@ pub async fn compute_classic_standings(
         }
 
         let pid_i32 = sol.problem_id as i32;
-        let score = if problem_max_scores.get(&pid_i32).copied().unwrap_or(0) > 0 {
-            // Use best_score if problem has max_score
-            if sol.best_score > sol.best_test_score {
-                sol.best_score
-            } else {
-                sol.best_test_score
-            }
-        } else {
-            sol.best_test_score
-        };
+        // PHP: $s->score = $s->score / 100 * $problems[$s->problem_id]->max_score
+        let max_score = problem_max_scores.get(&pid_i32).copied().unwrap_or(100);
+        let score = sol.latest_score / Decimal::from(100) * Decimal::from(max_score);
 
         user_scores.entry(sol.user_id).or_default().insert(
             pid_i32,
-            (
-                score,
-                sol.has_ok > 0,
-                best_solution_ids
-                    .get(&(sol.user_id, sol.problem_id))
-                    .copied(),
-            ),
+            (score, sol.latest_test_result == 0, Some(sol.latest_solution_id)),
         );
     }
 
