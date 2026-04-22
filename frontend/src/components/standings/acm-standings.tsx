@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { StandingsData, ProblemScore, StandingsUser } from '@/types';
+import type { ChangedCells } from '@/app/(main)/contests/[contestId]/standings/page';
 
 function formatTime(seconds: number): string {
   if (!seconds) return '';
@@ -26,7 +27,7 @@ function computeRankRanges(users: StandingsUser[]): Map<number, string> {
   return ranges;
 }
 
-export function AcmStandings({ data, contestId, currentUserId, canViewAll = false }: { data: StandingsData; contestId?: string; currentUserId?: number; canViewAll?: boolean }) {
+export function AcmStandings({ data, contestId, currentUserId, canViewAll = false, changes }: { data: StandingsData; contestId?: string; currentUserId?: number; canViewAll?: boolean; changes?: ChangedCells | null }) {
   const { t } = useTranslation();
   const rankRanges = computeRankRanges(data.users);
 
@@ -55,9 +56,19 @@ export function AcmStandings({ data, contestId, currentUserId, canViewAll = fals
         <tbody className="divide-y divide-border">
           {data.users.map((user) => {
             const isMe = currentUserId != null && Number(currentUserId) === Number(user.user_id);
+            const rankChanged = changes?.rankChanged.has(user.user_id);
+            const totalChanged = changes?.totalChanged.has(user.user_id);
+            const userScoreChanges = changes?.scoreChanged.get(user.user_id);
             return (
-              <tr key={user.user_id} className={cn('hover:bg-muted/50', isMe && 'bg-primary/5 font-medium')}>
-                <td className="px-3 py-2 text-muted-foreground text-center text-xs font-mono">
+              <tr key={user.user_id} className={cn(
+                'hover:bg-muted/50 transition-colors duration-700',
+                isMe && 'bg-primary/5 font-medium',
+                rankChanged && 'animate-pulse bg-blue-500/10',
+              )}>
+                <td className={cn(
+                  'px-3 py-2 text-center text-xs font-mono transition-colors duration-700',
+                  rankChanged ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-muted-foreground',
+                )}>
                   {rankRanges.get(user.user_id) || user.place}
                 </td>
                 <td className="px-3 py-2">
@@ -69,6 +80,7 @@ export function AcmStandings({ data, contestId, currentUserId, canViewAll = fals
                   const solved = ps.is_solved;
                   const attempts = ps.attempts;
                   const canLink = ps.solution_id != null && ps.solution_id > 0 && contestId && (isMe || canViewAll);
+                  const cellChanged = userScoreChanges?.has(idx);
                   const cellContent = solved ? (
                     <div>
                       <div className={cn('font-bold', ps.is_first_solve ? 'text-green-700 dark:text-green-300' : 'text-green-600 dark:text-green-400')}>
@@ -84,8 +96,9 @@ export function AcmStandings({ data, contestId, currentUserId, canViewAll = fals
                     <td
                       key={idx}
                       className={cn(
-                        'px-3 py-1 text-center text-xs',
-                        solved ? 'bg-green-500/15' : attempts > 0 ? 'bg-red-500/10' : ''
+                        'px-3 py-1 text-center text-xs transition-all duration-700',
+                        solved ? 'bg-green-500/15' : attempts > 0 ? 'bg-red-500/10' : '',
+                        cellChanged && 'ring-2 ring-blue-500/50 ring-inset rounded animate-pulse',
                       )}
                     >
                       {canLink && cellContent ? (
@@ -96,8 +109,8 @@ export function AcmStandings({ data, contestId, currentUserId, canViewAll = fals
                     </td>
                   );
                 })}
-                <td className="px-3 py-2 text-center font-bold">{user.total_solved}</td>
-                <td className="px-3 py-2 text-center text-muted-foreground">{user.penalty}</td>
+                <td className={cn('px-3 py-2 text-center font-bold transition-all duration-700', totalChanged && 'text-blue-600 dark:text-blue-400 animate-pulse')}>{user.total_solved}</td>
+                <td className={cn('px-3 py-2 text-center text-muted-foreground transition-all duration-700', totalChanged && 'text-blue-600 dark:text-blue-400 animate-pulse')}>{user.penalty}</td>
               </tr>
             );
           })}
