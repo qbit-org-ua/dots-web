@@ -164,6 +164,7 @@
     "penalty": "Penalty",
     "triedSolved": "Tried / Solved",
     "noStandings": "No standings data yet",
+    "liveUpdates": "Auto-refreshing every 10 seconds",
     "noStandingsDesc": "Standings will appear here once participants submit solutions.",
     "submitSolution": "Submit a solution",
     "score": "Score"

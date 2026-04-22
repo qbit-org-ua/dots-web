@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/i18n';
 import type { StandingsData, ProblemScore, StandingsUser } from '@/types';
+import type { ChangedCells } from '@/app/(main)/contests/[contestId]/standings/page';
 
 function scoreColor(score: number, maxScore: number) {
   if (score >= maxScore && maxScore > 0) return 'bg-green-500/15 text-green-700 dark:text-green-300';
@@ -25,7 +26,13 @@ function computeRankRanges(users: StandingsUser[]): Map<number, string> {
   return ranges;
 }
 
-export function ClassicStandings({ data, contestId, currentUserId, canViewAll = false }: { data: StandingsData; contestId?: string; currentUserId?: number; canViewAll?: boolean }) {
+export function ClassicStandings({ data, contestId, currentUserId, canViewAll = false, changes }: {
+  data: StandingsData;
+  contestId?: string;
+  currentUserId?: number;
+  canViewAll?: boolean;
+  changes?: ChangedCells | null;
+}) {
   const { t } = useTranslation();
   const rankRanges = computeRankRanges(data.users);
 
@@ -53,9 +60,23 @@ export function ClassicStandings({ data, contestId, currentUserId, canViewAll = 
         <tbody className="divide-y divide-border">
           {data.users.map((user) => {
             const isMe = currentUserId != null && Number(currentUserId) === Number(user.user_id);
+            const rankChanged = changes?.rankChanged.has(user.user_id);
+            const totalChanged = changes?.totalChanged.has(user.user_id);
+            const userScoreChanges = changes?.scoreChanged.get(user.user_id);
+
             return (
-              <tr key={user.user_id} className={cn('hover:bg-muted/50', isMe && 'bg-primary/5 font-medium')}>
-                <td className="px-3 py-2 text-muted-foreground text-center text-xs font-mono">
+              <tr
+                key={user.user_id}
+                className={cn(
+                  'hover:bg-muted/50 transition-colors duration-700',
+                  isMe && 'bg-primary/5 font-medium',
+                  rankChanged && 'animate-pulse bg-blue-500/10',
+                )}
+              >
+                <td className={cn(
+                  'px-3 py-2 text-center text-xs font-mono transition-colors duration-700',
+                  rankChanged ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-muted-foreground',
+                )}>
                   {rankRanges.get(user.user_id) || user.place}
                 </td>
                 <td className="px-3 py-2">
@@ -69,10 +90,16 @@ export function ClassicStandings({ data, contestId, currentUserId, canViewAll = 
                   const maxScore = 100;
                   const display = score > 0 ? ps.score : ps.is_solved ? '0' : '';
                   const canLink = ps.solution_id != null && ps.solution_id > 0 && contestId && (isMe || canViewAll);
+                  const cellChanged = userScoreChanges?.has(idx);
+
                   return (
                     <td
                       key={idx}
-                      className={cn('px-3 py-2 text-center font-mono text-xs', scoreColor(score, maxScore))}
+                      className={cn(
+                        'px-3 py-2 text-center font-mono text-xs transition-all duration-700',
+                        scoreColor(score, maxScore),
+                        cellChanged && 'ring-2 ring-blue-500/50 ring-inset rounded animate-pulse',
+                      )}
                     >
                       {canLink && display ? (
                         <Link href={`/contests/${contestId}/solutions/${ps.solution_id}`} className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
@@ -84,7 +111,12 @@ export function ClassicStandings({ data, contestId, currentUserId, canViewAll = 
                     </td>
                   );
                 })}
-                <td className="px-3 py-2 text-center font-bold">{user.total_score}</td>
+                <td className={cn(
+                  'px-3 py-2 text-center font-bold transition-all duration-700',
+                  totalChanged && 'text-blue-600 dark:text-blue-400 animate-pulse',
+                )}>
+                  {user.total_score}
+                </td>
               </tr>
             );
           })}
