@@ -7,10 +7,10 @@ use crate::config::Config;
 use crate::services::file_storage;
 
 /// Maximum number of solutions processed in parallel by the LLM job.
-const MAX_CONCURRENCY: usize = 10;
+const MAX_CONCURRENCY: usize = 40;
 
 /// Per-solution timeout for the LLM call + file replacement step.
-const LLM_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
+const LLM_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(180);
 
 /// Spawn the background LLM generation loop.
 /// Polls for solutions with test_result = -4 and processes up to
@@ -178,9 +178,15 @@ async fn generate_and_replace(
 
     // Call LLM API — model depends on lang_id
     let model = match solution.lang_id {
-        40 => "zai-org/GLM-5-FP8",
+        40 => "zai-org/GLM-5.1-FP8",
         41 => "Qwen/Qwen3.5-122B-A10B",
         other => anyhow::bail!("Unsupported lang_id {other} for LLM generation"),
+    };
+
+    let llm_endpoint = match solution.lang_id {
+        40 => "https://glm-5-1.completions.near.ai/v1",
+        41 => "https://qwen35-122b.completions.near.ai/v1",
+        _ => "https://cloud-api.near.ai/v1",
     };
 
     let api_key = &config.nearai_api_key;
@@ -201,7 +207,7 @@ async fn generate_and_replace(
 
     let resp: serde_json::Value = loop {
         let send_result = client
-            .post("https://cloud-api.near.ai/v1/chat/completions")
+            .post(format!("{llm_endpoint}/chat/completions"))
             .bearer_auth(api_key)
             .json(&body)
             .send()

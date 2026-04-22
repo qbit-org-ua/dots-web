@@ -95,9 +95,8 @@ pub async fn compute_classic_standings(
         }
 
         let pid_i32 = sol.problem_id as i32;
-        // PHP: $s->score = $s->score / 100 * $problems[$s->problem_id]->max_score
         let max_score = problem_max_scores.get(&pid_i32).copied().unwrap_or(100);
-        let score = sol.latest_score / Decimal::from(100) * Decimal::from(max_score);
+        let score = sol.latest_score * Decimal::from(max_score) / Decimal::from(100);
 
         user_scores.entry(sol.user_id).or_default().insert(
             pid_i32,
